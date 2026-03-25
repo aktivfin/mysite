@@ -420,6 +420,23 @@ select.finp { cursor:pointer }
    CHAT
 ═══════════════════════════════════════ */
 .chat-container { flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative }
+.workspace-split { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:0; height:100% }
+.action-queue {
+  border-left:1px solid var(--border);
+  background:var(--bg1);
+  padding:12px;
+  overflow-y:auto;
+}
+.aq-head {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:8px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border);
+}
+.queue-item {
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--rs);
+  padding:10px; margin-bottom:8px;
+}
+.queue-meta { font-size:10px; color:var(--t3); margin-top:5px }
+.queue-actions { display:flex; gap:6px; margin-top:8px }
 
 .chat-header {
   display:flex; align-items:center; gap:10px;
@@ -710,6 +727,8 @@ select.finp { cursor:pointer }
   .topbar { padding:0 14px }
   .chat-messages { padding:14px }
   .chat-chips { padding:4px 14px }
+  .workspace-split { grid-template-columns:1fr }
+  .action-queue { border-left:none; border-top:1px solid var(--border); max-height:38vh }
 }
 
 [hidden] { display:none !important }
@@ -770,58 +789,20 @@ input[type=file] { display:none }
 
   <div class="sidebar-nav">
     <div class="nav-group">
-      <div class="nav-label">Обзор</div>
+      <div class="nav-label">Execution Path</div>
       <div class="nav-item active" data-page="dashboard" onclick="goPage('dashboard',this)">
-        <span class="nav-icon">⬡</span>Dashboard
+        <span class="nav-icon">☀</span>Today
       </div>
       <div class="nav-item" data-page="projects" onclick="goPage('projects',this)">
-        <span class="nav-icon">◫</span>Проекты
+        <span class="nav-icon">◫</span>Project HQ
         <span class="nav-badge nb-p" id="proj-cnt">0</span>
       </div>
-    </div>
-
-    <div class="nav-group">
-      <div class="nav-label">Работа</div>
       <div class="nav-item" data-page="chat" onclick="goPage('chat',this)">
-        <span class="nav-icon">◻</span>Чат с AI
-        <span class="nav-badge nb-p" id="chat-badge" hidden>0</span>
-      </div>
-      <div class="nav-item" data-page="tasks" onclick="goPage('tasks',this)">
-        <span class="nav-icon">☑</span>Задачи
+        <span class="nav-icon">◻</span>AI Workspace
         <span class="nav-badge nb-o" id="task-badge">0</span>
       </div>
-      <div class="nav-item" data-page="agents" onclick="goPage('agents',this)">
-        <span class="nav-icon">🤖</span>Агенты
-        <span class="nav-badge nb-g" id="agent-badge">8</span>
-      </div>
     </div>
-
-    <div class="nav-group">
-      <div class="nav-label">Контент</div>
-      <div class="nav-item" data-page="youtube" onclick="goPage('youtube',this)">
-        <span class="nav-icon">▷</span>YouTube
-      </div>
-      <div class="nav-item" data-page="scripts" onclick="goPage('scripts',this)">
-        <span class="nav-icon">≡</span>Сценарии
-        <span class="nav-badge nb-p" id="script-badge">0</span>
-      </div>
-      <div class="nav-item" data-page="images" onclick="goPage('images',this)">
-        <span class="nav-icon">◎</span>Изображения
-      </div>
-      <div class="nav-item" data-page="music" onclick="goPage('music',this)">
-        <span class="nav-icon">♫</span>Музыка
-      </div>
-    </div>
-
-    <div class="nav-group">
-      <div class="nav-label">Жизнь</div>
-      <div class="nav-item" data-page="finances" onclick="goPage('finances',this)">
-        <span class="nav-icon">💰</span>Деньги
-      </div>
-      <div class="nav-item" data-page="habits" onclick="goPage('habits',this)">
-        <span class="nav-icon">↺</span>Привычки
-      </div>
-    </div>
+  </div>
   </div>
 
   <div class="sidebar-foot">
@@ -843,7 +824,7 @@ input[type=file] { display:none }
 <!-- ════ DASHBOARD ════ -->
 <div class="panel on" id="page-dashboard">
   <div class="topbar">
-    <div class="tb-title">Dashboard</div>
+    <div class="tb-title">Today</div>
     <span class="tb-sub" id="dash-date"></span>
     <div class="tb-actions">
       <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-task')">+ Задача</button>
@@ -853,12 +834,11 @@ input[type=file] { display:none }
     <!-- Hero -->
     <div class="dash-hero">
       <div class="dash-greeting" id="dash-greeting">Добро пожаловать</div>
-      <div class="dash-subtitle">Сегодня у тебя <span id="dash-task-cnt">0</span> задач · <span id="dash-habit-cnt">0</span> привычек</div>
+      <div class="dash-subtitle">Главные outcomes на сегодня: <span id="dash-task-cnt">0</span> в работе · <span id="dash-habit-cnt">0</span> рутин</div>
       <div class="quick-actions">
-        <button class="btn btn-primary btn-sm" onclick="goPage('chat')">◻ Чат с AI</button>
-        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-new-task')">+ Задача</button>
-        <button class="btn btn-ghost btn-sm" onclick="goPage('scripts')">≡ Сценарии</button>
-        <button class="btn btn-ghost btn-sm" onclick="goPage('finances')">◈ Деньги</button>
+        <button class="btn btn-primary btn-sm" onclick="goPage('chat')">◻ Открыть AI Workspace</button>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-new-task')">+ Добавить outcome</button>
+        <button class="btn btn-ghost btn-sm" onclick="goPage('projects')">◫ Открыть Project HQ</button>
       </div>
     </div>
 
@@ -868,7 +848,7 @@ input[type=file] { display:none }
       <!-- Tasks -->
       <div>
         <div class="sec">
-          <div class="sec-title">Задачи сегодня</div>
+          <div class="sec-title">Главные outcomes</div>
           <button class="btn btn-ghost btn-xs" onclick="openModal('modal-new-task')">+ Добавить</button>
         </div>
         <div id="dash-tasks"></div>
@@ -876,7 +856,7 @@ input[type=file] { display:none }
       <!-- Active agents -->
       <div>
         <div class="sec">
-          <div class="sec-title">Агенты</div>
+          <div class="sec-title">Execution focus</div>
           <button class="btn btn-ghost btn-xs" onclick="goPage('agents')">Все агенты</button>
         </div>
         <div id="dash-agents"></div>
@@ -887,7 +867,7 @@ input[type=file] { display:none }
       <!-- Habits -->
       <div>
         <div class="sec">
-          <div class="sec-title">Привычки</div>
+          <div class="sec-title">Daily rhythm</div>
           <button class="btn btn-ghost btn-xs" onclick="goPage('habits')">Все привычки</button>
         </div>
         <div id="dash-habits"></div>
@@ -895,7 +875,7 @@ input[type=file] { display:none }
       <!-- Finance snapshot -->
       <div>
         <div class="sec">
-          <div class="sec-title">Финансы</div>
+          <div class="sec-title">Resource snapshot</div>
           <button class="btn btn-ghost btn-xs" onclick="goPage('finances')">Все финансы</button>
         </div>
         <div id="dash-finance"></div>
@@ -907,68 +887,85 @@ input[type=file] { display:none }
 <!-- ════ PROJECTS ════ -->
 <div class="panel" id="page-projects">
   <div class="topbar">
-    <div class="tb-title">Проекты</div>
+    <div class="tb-title">Project HQ</div>
     <div class="tb-actions">
       <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-project')">+ Проект</button>
     </div>
   </div>
   <div class="scroll-body">
+    <div class="g3" style="margin-bottom:18px" id="hq-metrics"></div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="sec" style="margin-bottom:8px"><div class="sec-title">Execution lane</div></div>
+      <div id="hq-lane"></div>
+    </div>
     <div class="proj-grid" id="projects-grid"></div>
   </div>
 </div>
 
 <!-- ════ CHAT ════ -->
 <div class="panel" id="page-chat">
-  <div class="chat-container">
-    <div class="chat-header">
-      <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--p),var(--pl));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff">OC</div>
-      <div>
-        <div style="font-size:13px;font-weight:700">OpenClaw Agent</div>
-        <div style="font-size:10px;color:var(--t2)" id="chat-status-lbl">Готов к работе</div>
+  <div class="workspace-split">
+    <div class="chat-container">
+      <div class="chat-header">
+        <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--p),var(--pl));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff">OC</div>
+        <div>
+          <div style="font-size:13px;font-weight:700">AI Workspace</div>
+          <div style="font-size:10px;color:var(--t2)" id="chat-status-lbl">Формат: вывод → действия → auto-created tasks</div>
+        </div>
+        <div class="chat-project-tag" id="chat-proj-tag">YouTube канал</div>
+        <div style="margin-left:auto;display:flex;gap:7px">
+          <button class="btn btn-ghost btn-xs" onclick="clearChat()">Очистить</button>
+          <button class="btn btn-ghost btn-xs" onclick="exportChat()">↓ Экспорт</button>
+        </div>
       </div>
-      <div class="chat-project-tag" id="chat-proj-tag">YouTube канал</div>
-      <div style="margin-left:auto;display:flex;gap:7px">
-        <button class="btn btn-ghost btn-xs" onclick="clearChat()">Очистить</button>
-        <button class="btn btn-ghost btn-xs" onclick="exportChat()">↓ Экспорт</button>
+
+      <div class="chat-messages" id="chat-msgs"></div>
+
+      <div class="mode-row">
+        <span class="mode-label">РЕЖИМ:</span>
+        <select class="mode-select" id="chat-mode" onchange="onModeChange()">
+          <option value="auto">Авто</option>
+          <option value="youtube">▷ YouTube</option>
+          <option value="script">≡ Сценарии</option>
+          <option value="code">⌨ Код</option>
+          <option value="image">◎ Изображения</option>
+          <option value="money">◈ Финансы</option>
+          <option value="music">♫ Музыка</option>
+        </select>
+        <span style="font-size:10px;color:var(--t3)" id="mode-hint">Умный ассистент</span>
       </div>
-    </div>
 
-    <div class="chat-messages" id="chat-msgs"></div>
+      <div class="chat-chips">
+        <div class="chip" onclick="quickMsg('Сформируй outcome по проекту: ')">☀ Outcome</div>
+        <div class="chip" onclick="quickMsg('Добавь в action queue: ')">☑ Queue item</div>
+        <div class="chip" onclick="quickMsg('Создай сценарий YouTube Shorts: ')">≡ Сценарий</div>
+        <div class="chip" onclick="quickMsg('Запусти анализ трендов по теме: ')">📈 Тренды</div>
+      </div>
 
-    <div class="mode-row">
-      <span class="mode-label">РЕЖИМ:</span>
-      <select class="mode-select" id="chat-mode" onchange="onModeChange()">
-        <option value="auto">Авто</option>
-        <option value="youtube">▷ YouTube</option>
-        <option value="script">≡ Сценарии</option>
-        <option value="code">⌨ Код</option>
-        <option value="image">◎ Изображения</option>
-        <option value="money">◈ Финансы</option>
-        <option value="music">♫ Музыка</option>
-      </select>
-      <span style="font-size:10px;color:var(--t3)" id="mode-hint">Умный ассистент</span>
-    </div>
-
-    <div class="chat-chips">
-      <div class="chip" onclick="quickMsg('Создай сценарий YouTube Shorts: ')">≡ Сценарий</div>
-      <div class="chip" onclick="quickMsg('Сгенерируй 10 идей для видео о: ')">💡 Идеи</div>
-      <div class="chip" onclick="quickMsg('Добавь задачу: ')">☑ Задача</div>
-      <div class="chip" onclick="quickMsg('Запусти анализ трендов по теме: ')">📈 Тренды</div>
-      <div class="chip" onclick="quickMsg('Напиши код для: ')">⌨ Код</div>
-    </div>
-
-    <div class="chat-input-area">
-      <div class="drop-ov" id="drop-ov">📂 Отпустите файл</div>
-      <div class="chat-input-box">
-        <textarea class="chat-textarea" id="chat-inp" placeholder="Сообщение агенту..." rows="1"
-          onkeydown="chatKey(event)" oninput="autoGrow(this)"></textarea>
-        <div class="chat-btns">
-          <label class="chat-tool" for="chat-file" title="Прикрепить">📎</label>
-          <input type="file" id="chat-file" accept="image/*" onchange="attachFile(this)">
-          <button class="chat-send" onclick="sendChatMsg()">▸</button>
+      <div class="chat-input-area">
+        <div class="drop-ov" id="drop-ov">📂 Отпустите файл</div>
+        <div class="chat-input-box">
+          <textarea class="chat-textarea" id="chat-inp" placeholder="Сообщение агенту..." rows="1"
+            onkeydown="chatKey(event)" oninput="autoGrow(this)"></textarea>
+          <div class="chat-btns">
+            <label class="chat-tool" for="chat-file" title="Прикрепить">📎</label>
+            <input type="file" id="chat-file" accept="image/*" onchange="attachFile(this)">
+            <button class="chat-send" onclick="sendChatMsg()">▸</button>
+          </div>
         </div>
       </div>
     </div>
+
+    <aside class="action-queue">
+      <div class="aq-head">
+        <div>
+          <div style="font-size:12px;font-weight:700">Action Queue</div>
+          <div style="font-size:10px;color:var(--t2)">единый execution-путь</div>
+        </div>
+        <button class="btn btn-primary btn-xs" onclick="openModal('modal-new-task')">+ Task</button>
+      </div>
+      <div id="queue-list"></div>
+    </aside>
   </div>
 </div>
 
@@ -1713,6 +1710,8 @@ function goPage(page, el) {
   }
   currentPage = page;
   if(page==='chat') setTimeout(()=>{ document.getElementById('chat-inp')?.focus(); scrollChat(); },80);
+  if(page==='chat') renderActionQueue();
+  if(page==='projects') renderProjectHQ();
   if(page==='tasks') renderTasks();
   if(page==='agents') renderAgents();
   if(page==='scripts') renderScripts();
@@ -1933,6 +1932,31 @@ function renderProjects() {
       </div>
     </div>`;
   renderProjSwitcher();
+  renderProjectHQ();
+}
+function renderProjectHQ() {
+  const m = document.getElementById('hq-metrics');
+  const lane = document.getElementById('hq-lane');
+  if(!m || !lane) return;
+  const project = STATE.currentProject?.name;
+  const pTasks = STATE.tasks.filter((t)=>t.project===project);
+  const done = pTasks.filter((t)=>t.done).length;
+  const inprogress = pTasks.filter((t)=>t.status==='inprogress').length;
+  const todo = pTasks.filter((t)=>!t.done && t.status!=='inprogress').length;
+  const progress = pTasks.length ? Math.round((done / pTasks.length) * 100) : 0;
+  m.innerHTML = [
+    {lbl:'Project Progress',val:`${progress}%`,d:`${done}/${pTasks.length||0} done`,c:'up'},
+    {lbl:'Open outcomes',val:todo,d:'queue',c:'ne'},
+    {lbl:'In execution',val:inprogress,d:'active now',c:'ne'},
+  ].map(s=>`<div class="stat"><div class="stat-lbl">${s.lbl}</div><div class="stat-val">${s.val}</div><div class="stat-delta ${s.c}">${s.d}</div></div>`).join('');
+  lane.innerHTML = pTasks.slice(0,8).map((t)=>`
+    <div class="task-item" style="cursor:default">
+      <div class="task-prio prio-${t.prio}"></div>
+      <div class="task-check ${t.done?'done':''}">${t.done?'✓':''}</div>
+      <div class="task-title">${esc(t.title)}</div>
+      <div class="task-deadline">${t.status==='inprogress'?'in progress':(t.done?'done':'todo')}</div>
+    </div>
+  `).join('') || '<div style="text-align:center;color:var(--t3);padding:10px">Нет execution-задач в проекте</div>';
 }
 function renderProjSwitcher() {
   const el = document.getElementById('proj-switcher-list'); if(!el) return;
@@ -1955,6 +1979,8 @@ function switchProject(id) {
   renderScripts();
   renderImages();
   renderDashboard();
+  renderActionQueue();
+  renderProjectHQ();
   save();
   toast('Проект: '+p.name,'i');
 }
@@ -2061,17 +2087,37 @@ function addTask() {
 }
 function addTaskFromAI(d) {
   STATE.tasks.unshift({id:Date.now(),title:d.title||'AI задача',project:STATE.currentProject?.name||'Личные',prio:'med',deadline:'',done:false,status:'todo'});
-  save(); renderTasks(); renderDashboard(); updateBadges();
+  save(); renderTasks(); renderDashboard(); renderActionQueue(); renderProjectHQ(); updateBadges();
   toast('AI добавил задачу: '+d.title,'s');
 }
 function toggleTask(id) {
   const t = STATE.tasks.find(x=>x.id===id); if(!t) return;
   t.done = !t.done; t.status = t.done?'done':'todo';
-  save(); renderTasks(); renderDashboard(); updateBadges();
+  save(); renderTasks(); renderDashboard(); renderActionQueue(); renderProjectHQ(); updateBadges();
 }
 function deleteTask(id) {
   STATE.tasks = STATE.tasks.filter(t=>t.id!==id);
-  save(); renderTasks(); renderDashboard(); updateBadges();
+  save(); renderTasks(); renderDashboard(); renderActionQueue(); renderProjectHQ(); updateBadges();
+}
+function setTaskStatus(id, status) {
+  const t = STATE.tasks.find((x)=>x.id===id); if(!t) return;
+  t.status = status;
+  t.done = status === 'done';
+  save(); renderTasks(); renderDashboard(); renderActionQueue(); renderProjectHQ(); updateBadges();
+}
+function renderActionQueue() {
+  const el = document.getElementById('queue-list'); if(!el) return;
+  const queue = STATE.tasks.filter((t)=>t.project===STATE.currentProject?.name && !t.done).slice(0,12);
+  el.innerHTML = queue.map((t)=>`
+    <div class="queue-item">
+      <div style="font-size:12px;font-weight:600">${esc(t.title)}</div>
+      <div class="queue-meta">${esc(t.project)} · ${t.prio} · ${t.status || 'todo'}</div>
+      <div class="queue-actions">
+        <button class="btn btn-ghost btn-xs" onclick="setTaskStatus(${t.id},'inprogress')">Start</button>
+        <button class="btn btn-success btn-xs" onclick="setTaskStatus(${t.id},'done')">Done</button>
+      </div>
+    </div>
+  `).join('') || '<div style="font-size:11px;color:var(--t3);padding:12px">Очередь пуста — попроси AI создать task.</div>';
 }
 
 /* ══════════════════════════════════════
@@ -2139,34 +2185,31 @@ function onModeChange(){
   const el=document.getElementById('mode-hint'); if(el) el.textContent=MODE_HINTS[m]||'';
 }
 function addWelcome(){
-  addAIMsg(`Привет! Я твой AI-ассистент OpenClaw.
-
-**Чем могу помочь:**
-— Создавать сценарии YouTube и Shorts
-— Анализировать тренды и конкурентов
-— Добавлять задачи и идеи
-— Помогать с музыкой и текстами
-— Управлять агентами
-
-Выбери режим выше или просто напиши задачу.`,'plain');
+  addAIMsg(buildAIResponse(
+    'Готов работать в режиме execution. Сформулируй outcome, и я разложу его на действия.',
+    ['Уточнить цель на сегодня', 'Предложить следующий шаг'],
+    []
+  ),'plain');
 }
 function addAIMsg(text, type='plain') {
   const el = document.getElementById('chat-msgs');
-  const msg = {id:Date.now(),role:'ai',text,type,time:tstamp()};
+  const normalized = ensureAIFormat(text);
+  const msg = {id:Date.now(),role:'ai',text:normalized,type,time:tstamp()};
   STATE.messages.push(msg);
   const div = document.createElement('div');
   div.className='msg ai';
   div.innerHTML=`
     <div class="msg-av">OC</div>
     <div class="msg-content">
-      <div class="msg-bubble">${formatMsg(text)}</div>
+      <div class="msg-bubble">${formatMsg(normalized)}</div>
       <div class="msg-meta">
         ${type!=='plain'?`<span class="msg-type-tag">${type}</span>`:''}
         <span>${msg.time}</span>
       </div>
-      ${getAIActions(text,type)}
+      ${getAIActions(normalized,type)}
     </div>`;
   el.appendChild(div); scrollChat();
+  autoCreateTasksFromAI(normalized);
 }
 function getAIActions(text,type) {
   const actions=[];
@@ -2245,14 +2288,14 @@ function classifyMsg(text) {
 function generateReply(text, img=null) {
   const t=(text||'').toLowerCase();
   const proj=STATE.currentProject?.name||'проекте';
-  if(img) return `Получил изображение! По проекту **${proj}**:\n\nПроанализировал референс. Стиль: минималистичный, высококонтрастный. Могу использовать как основу для генерации похожих изображений через Image Agent.`;
-  if(/сценари|shorts/i.test(t)) return `🎬 **Сценарий для ${proj}:**\n\n**Хук (0–3 сек):**\nТы тратишь часы на то, что AI делает за секунды?\n\n**Основная часть:**\n1. ${text} — разберём по шагам\n2. Реальные инструменты, которые работают\n3. Конкретные результаты\n\n**CTA:**\nПодпишись и сохрани — пригодится через неделю!\n\n---\n*Сценарий сохранён автоматически в раздел "Сценарии"*`;
-  if(/идеи|темы|контент/i.test(t)) return `💡 **10 идей по теме "${text}":**\n\n1. Гайд для полных новичков\n2. Топ-5 ошибок и как их избежать\n3. Мой путь: от нуля до результата\n4. Честное сравнение инструментов\n5. Фишки, о которых никто не говорит\n6. Реальный кейс с цифрами\n7. Разбор конкурентов\n8. День из жизни: как я использую это\n9. Бесплатно vs Платно\n10. Прогноз на следующий год`;
-  if(/анализ|тренд|конкурент/i.test(t)) return `📈 **Анализ: "${text}"**\n\n**Тренды:**\n— Рост запросов +240% за последние 3 месяца\n— Пик: 09:00–12:00 МСК по будням\n— Возраст аудитории: 18–34 (67%)\n\n**Топ-3 конкурента:**\n1. Канал A — 500K просмотров/мес\n2. Канал B — 320K просмотров/мес\n3. Канал C — 180K просмотров/мес\n\n**Рекомендация:** Входи в нишу с акцентом на практику — теоретики уже заняли место.`;
-  if(/задач|добав|сделать/i.test(t)) return `☑ Понял! Запишу задачу: **"${text}"**\n\nНажми кнопку ниже, чтобы добавить её в список задач, или я создам автоматически.\n\nКакой приоритет? (высокий / средний / низкий)`;
-  if(/код|python|скрипт|автомат/i.test(t)) return `⌨ **Код для "${text}":**\n\n\`\`\`python\nimport asyncio\nfrom typing import Optional\n\nasync def solution(input_data: Optional[str] = None):\n    """\n    ${text}\n    """\n    # Реализация\n    result = {"status": "success"}\n    print(f"Выполняю: ${text}")\n    return result\n\nasyncio.run(solution())\n\`\`\`\n\nСохранить в Код-лаб?`;
-  if(/деньги|финанс|доход|расход/i.test(t)) return `💰 **Финансовый анализ:**\n\nБаланс этого месяца:\n— Доходы: +${fmt_rub(STATE.finances.filter(f=>f.type==='income').reduce((a,f)=>a+f.amount,0))}\n— Расходы: −${fmt_rub(STATE.finances.filter(f=>f.type==='expense').reduce((a,f)=>a+f.amount,0))}\n\n**Рекомендации:**\n1. Основной источник дохода — YouTube (${Math.round(Math.random()*40+30)}%)\n2. Подписки можно сократить на 30%\n3. Потенциал масштабирования: × 2–3 через спонсорство`;
-  return `Понял запрос в контексте **${proj}**.\n\n${text}\n\nАнализирую... Выбери режим работы выше для более точного ответа. Также могу:\n— Создать задачу по этой теме\n— Запустить агент для исследования\n— Сохранить как идею или заметку`;
+  if(img) return buildAIResponse(`Получил изображение по проекту ${proj}. Референс: минималистичный и контрастный стиль.`,['Сгенерировать 3 варианта визуала','Подготовить промпт для Image Agent'],['Сделать moodboard на базе референса']);
+  if(/сценари|shorts/i.test(t)) return buildAIResponse(`Сценарий для ${proj}: мощный хук + 3 практических шага + CTA на сохранение.`,['Сохранить сценарий в библиотеку','Разбить на шоты для монтажа'],['Подготовить черновик Shorts и дедлайн публикации']);
+  if(/идеи|темы|контент/i.test(t)) return buildAIResponse(`Сгенерировал пул идей по теме: ${text}. Есть быстрые, экспертные и сравнительные форматы.`,['Выбрать 2 идеи с максимальным потенциалом','Проверить конкурентов и CTR'],['Создать контент-план на неделю']);
+  if(/анализ|тренд|конкурент/i.test(t)) return buildAIResponse(`Ниша растёт, спрос повышенный. Рекомендуется заход с упором на практические кейсы.`,['Собрать топ-3 конкурентов','Запланировать тестовый контент-спринт'],['Запустить еженедельный мониторинг трендов']);
+  if(/задач|добав|сделать/i.test(t)) return buildAIResponse(`Запрос принят: "${text}". Добавляю в execution-путь текущего проекта.`,['Поставить приоритет и дедлайн','Назначить статус in progress'],[text.replace(/^добавь|^добавить/i,'').trim() || 'Новая задача из чата']);
+  if(/код|python|скрипт|автомат/i.test(t)) return buildAIResponse(`Для задачи "${text}" нужен короткий прототип, затем интеграция в workflow.`,['Сгенерировать каркас кода','Подготовить тест-кейсы'],['Создать задачу: реализовать и проверить скрипт']);
+  if(/деньги|финанс|доход|расход/i.test(t)) return buildAIResponse(`Баланс положительный, основной рост через контент-направление.`,['Сократить постоянные подписки','Запланировать масштабирование дохода'],['Обновить финансовый план на 30 дней']);
+  return buildAIResponse(`Понял запрос для проекта ${proj}: ${text}`,['Уточнить ожидаемый результат','Запустить следующий executable шаг'],['Добавить outcome в action queue']);
 }
 function clearChat(){
   STATE.messages=[];
@@ -2265,7 +2308,7 @@ function exportChat(){
 }
 function addTaskFromText(text){
   STATE.tasks.unshift({id:Date.now(),title:text,project:STATE.currentProject?.name||'Личные',prio:'med',deadline:'',done:false,status:'todo'});
-  save(); renderTasks(); renderDashboard(); updateBadges();
+  save(); renderTasks(); renderDashboard(); renderActionQueue(); renderProjectHQ(); updateBadges();
   toast('Задача добавлена','s');
 }
 function saveScriptFromChat(text){
@@ -2567,21 +2610,11 @@ function addHabit(){
    CMD PALETTE
 ══════════════════════════════════════ */
 const CMDS=[
-  {ic:'⬡',lb:'Dashboard',       sub:'Главный экран',          fn:()=>goPage('dashboard')},
-  {ic:'◫',lb:'Проекты',         sub:'Все проекты',             fn:()=>goPage('projects')},
-  {ic:'◻',lb:'Чат с AI',        sub:'Открыть чат',             fn:()=>goPage('chat')},
-  {ic:'☑',lb:'Задачи',          sub:'Список задач',            fn:()=>goPage('tasks')},
-  {ic:'◈',lb:'Агенты',          sub:'AI агенты',               fn:()=>goPage('agents')},
-  {ic:'▷',lb:'YouTube',         sub:'Аналитика',               fn:()=>goPage('youtube')},
-  {ic:'≡',lb:'Сценарии',        sub:'Генерация',               fn:()=>goPage('scripts')},
-  {ic:'◎',lb:'Изображения',     sub:'Галерея',                 fn:()=>goPage('images')},
-  {ic:'♫',lb:'Музыка',          sub:'Аналитика треков',        fn:()=>goPage('music')},
-  {ic:'💰',lb:'Деньги',         sub:'Финансы',                 fn:()=>goPage('finances')},
-  {ic:'↺',lb:'Привычки',        sub:'Трекер',                  fn:()=>goPage('habits')},
+  {ic:'☀',lb:'Today',           sub:'Главные outcomes',        fn:()=>goPage('dashboard')},
+  {ic:'◫',lb:'Project HQ',      sub:'Прогресс проекта',        fn:()=>goPage('projects')},
+  {ic:'◻',lb:'AI Workspace',    sub:'Чат + action queue',      fn:()=>goPage('chat')},
   {ic:'+',lb:'Новая задача',    sub:'',                        fn:()=>openModal('modal-new-task')},
   {ic:'+',lb:'Новый проект',    sub:'',                        fn:()=>openModal('modal-new-project')},
-  {ic:'+',lb:'Добавить доход',  sub:'',                        fn:()=>{document.getElementById('fin-type').value='income';openModal('modal-finance');}},
-  {ic:'↺',lb:'Обновить агентов',sub:'',                        fn:refreshAgents},
   {ic:'✕',lb:'Очистить чат',   sub:'',                        fn:clearChat},
 ];
 let cmdFiltered=[...CMDS],cmdSel=0;
@@ -2642,6 +2675,26 @@ function updateBadges(){
   const el=document.getElementById('task-badge'); if(el) el.textContent=taskOpen;
   const sb=document.getElementById('script-badge'); if(sb) sb.textContent=STATE.scripts.filter(s=>s.project===STATE.currentProject?.name).length;
   renderDashStats();
+}
+function buildAIResponse(output, actions=[], tasks=[]) {
+  const act = actions.length ? actions.map((a,i)=>`${i+1}. ${a}`).join('\n') : '1. Уточнить цель';
+  const tsk = tasks.length ? tasks.map((t)=>`- [ ] ${t}`).join('\n') : '- [ ] Нет автозадач';
+  return `Вывод:\n${output}\n\nПредложенные действия:\n${act}\n\nAuto-created tasks:\n${tsk}`;
+}
+function ensureAIFormat(text='') {
+  if(/Вывод:\\s*[\\s\\S]*Предложенные действия:\\s*[\\s\\S]*Auto-created tasks:/i.test(text)) return text;
+  return buildAIResponse(text, ['Уточнить и подтвердить следующий шаг'], ['Добавить задачу из ответа AI']);
+}
+function autoCreateTasksFromAI(text='') {
+  const block = text.split('Auto-created tasks:')[1];
+  if(!block) return;
+  const lines = block.split('\n').map((l)=>l.replace(/^- \[ \]\s*/, '').replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
+  lines.forEach((line)=>{
+    if(/нет автозадач/i.test(line)) return;
+    const exists = STATE.tasks.some((t)=>t.title===line && t.project===STATE.currentProject?.name && !t.done);
+    if(!exists) STATE.tasks.unshift({id:Date.now()+Math.random(),title:line,project:STATE.currentProject?.name||'Личные',prio:'med',deadline:'',done:false,status:'todo'});
+  });
+  save(); renderTasks(); renderDashboard(); renderActionQueue(); renderProjectHQ(); updateBadges();
 }
 function formatMsg(text){
   return esc(text)
