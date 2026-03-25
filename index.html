@@ -302,6 +302,7 @@ body {
 .card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r); transition:border-color .2s }
 .card:hover { border-color:var(--borderH) }
 .card-p { padding:18px }
+.card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px }
 
 /* Pills */
 .pill {
@@ -355,6 +356,12 @@ select.finp { cursor:pointer }
 .sec { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px }
 .sec-title { font-size:12px; font-weight:700; color:var(--t2); text-transform:uppercase; letter-spacing:.7px }
 .divider { height:1px; background:var(--border); margin:20px 0 }
+
+.tab-row { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap }
+.tab-btn {
+  background:var(--glass); border:1px solid var(--border); color:var(--t2);
+}
+.tab-btn.active { background:var(--pd); border-color:rgba(124,92,255,.28); color:var(--t1) }
 
 /* Progress */
 .progress { height:2px; background:var(--border); border-radius:2px; overflow:hidden }
@@ -827,7 +834,7 @@ input[type=file] { display:none }
     <div class="tb-title">Today</div>
     <span class="tb-sub" id="dash-date"></span>
     <div class="tb-actions">
-      <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-task')">+ Задача</button>
+      <button class="btn btn-ghost btn-sm" onclick="openModal('modal-new-task')">+ Задача</button>
     </div>
   </div>
   <div class="scroll-body">
@@ -837,8 +844,7 @@ input[type=file] { display:none }
       <div class="dash-subtitle">Главные outcomes на сегодня: <span id="dash-task-cnt">0</span> в работе · <span id="dash-habit-cnt">0</span> рутин</div>
       <div class="quick-actions">
         <button class="btn btn-primary btn-sm" onclick="goPage('chat')">◻ Открыть AI Workspace</button>
-        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-new-task')">+ Добавить outcome</button>
-        <button class="btn btn-ghost btn-sm" onclick="goPage('projects')">◫ Открыть Project HQ</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleDashboardSecondary()">Второстепенные блоки</button>
       </div>
     </div>
 
@@ -863,7 +869,7 @@ input[type=file] { display:none }
       </div>
     </div>
 
-    <div class="g2">
+    <div class="g2" id="dash-secondary" hidden>
       <!-- Habits -->
       <div>
         <div class="sec">
@@ -889,7 +895,7 @@ input[type=file] { display:none }
   <div class="topbar">
     <div class="tb-title">Project HQ</div>
     <div class="tb-actions">
-      <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-project')">+ Проект</button>
+      <button class="btn btn-ghost btn-sm" onclick="openModal('modal-new-project')">+ Проект</button>
     </div>
   </div>
   <div class="scroll-body">
@@ -899,6 +905,74 @@ input[type=file] { display:none }
       <div id="hq-lane"></div>
     </div>
     <div class="proj-grid" id="projects-grid"></div>
+    <div class="card card-p" style="margin-top:18px">
+      <div class="card-head">
+        <div>
+          <div class="sec-title" style="margin-bottom:4px">Project assets</div>
+          <div style="font-size:11px;color:var(--t2)">Выбранный проект: <strong id="project-assets-label"></strong></div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="project-assets-primary" onclick="createScript()">+ Новый сценарий</button>
+      </div>
+      <div class="tab-row">
+        <button class="btn btn-sm tab-btn active" id="tab-scripts" onclick="setProjectAssetTab('scripts')">Scripts</button>
+        <button class="btn btn-sm tab-btn" id="tab-images" onclick="setProjectAssetTab('images')">Images</button>
+        <button class="btn btn-sm tab-btn" id="tab-music" onclick="setProjectAssetTab('music')">Music</button>
+      </div>
+      <div id="project-tab-scripts">
+        <div class="g2">
+          <div>
+            <input class="finp" placeholder="Поиск..." id="sc-search" oninput="filterScripts(this.value)" style="font-size:11px;margin-bottom:10px">
+            <div id="scripts-list"></div>
+          </div>
+          <div id="script-editor">
+            <div style="text-align:center;padding:60px;color:var(--t3)">
+              <div style="font-size:36px;margin-bottom:10px">≡</div>
+              <div style="font-size:12px">Выберите сценарий</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="project-tab-images" hidden>
+        <div class="g2">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="field"><label class="flbl">Промт</label><textarea class="finp" id="img-prompt" rows="4" placeholder="Опишите изображение..."></textarea></div>
+            <div class="field"><label class="flbl">Стиль</label>
+              <select class="finp" id="img-style"><option>Cinematic</option><option>Digital Art</option><option>Anime</option><option>Photography</option></select>
+            </div>
+            <div class="field"><label class="flbl">Размер</label>
+              <select class="finp" id="img-size"><option>1:1</option><option>16:9</option><option>9:16</option></select>
+            </div>
+            <div class="field"><label class="flbl">Количество</label>
+              <select class="finp" id="img-count"><option>1</option><option>2</option><option>4</option></select>
+            </div>
+          </div>
+          <div>
+            <div class="sec"><div class="sec-title">Элементы проекта</div></div>
+            <div class="img-grid" id="img-gallery"></div>
+          </div>
+        </div>
+      </div>
+      <div id="project-tab-music" hidden>
+        <div class="g2">
+          <div>
+            <div class="sec"><div class="sec-title">Анализ трека</div></div>
+            <div class="card card-p">
+              <div class="field"><label class="flbl">Текст или ссылка</label>
+                <textarea class="finp" id="music-input" rows="6" placeholder="Вставь текст трека или ссылку..."></textarea>
+              </div>
+              <button class="btn btn-primary" onclick="analyzeMusic()">♫ Анализировать</button>
+            </div>
+          </div>
+          <div>
+            <div class="sec"><div class="sec-title">Статистика</div></div>
+            <div id="music-stats"></div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="sec"><div class="sec-title">AI Идеи</div></div>
+        <div id="music-ideas"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1025,91 +1099,6 @@ input[type=file] { display:none }
     <div class="divider"></div>
     <div class="sec"><div class="sec-title">AI Рекомендации</div></div>
     <div id="yt-recs"></div>
-  </div>
-</div>
-
-<!-- ════ SCRIPTS ════ -->
-<div class="panel" id="page-scripts">
-  <div class="topbar">
-    <div class="tb-title">Сценарии</div>
-    <div class="tb-actions">
-      <button class="btn btn-ghost btn-sm" onclick="goPage('chat')">Создать в чате</button>
-      <button class="btn btn-primary btn-sm" onclick="createScript()">+ Новый сценарий</button>
-    </div>
-  </div>
-  <div class="scroll-body">
-    <div class="card card-p" style="margin-bottom:12px">
-      <div style="font-size:11px;color:var(--t2)">Проект: <strong id="scripts-project-label"></strong></div>
-    </div>
-    <div class="g2">
-      <div>
-        <input class="finp" placeholder="Поиск..." id="sc-search" oninput="filterScripts(this.value)" style="font-size:11px;margin-bottom:10px">
-        <div id="scripts-list"></div>
-      </div>
-      <div id="script-editor">
-        <div style="text-align:center;padding:60px;color:var(--t3)">
-          <div style="font-size:36px;margin-bottom:10px">≡</div>
-          <div style="font-size:12px">Выберите сценарий</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════ IMAGES ════ -->
-<div class="panel" id="page-images">
-  <div class="topbar">
-    <div class="tb-title">Изображения</div>
-    <div class="tb-actions">
-      <button class="btn btn-primary btn-sm" onclick="generateImages()">+ Новое изображение</button>
-    </div>
-  </div>
-  <div style="display:flex;flex:1;overflow:hidden">
-    <div style="width:260px;flex-shrink:0;border-right:1px solid var(--border);padding:18px;overflow-y:auto;background:var(--bg1);display:flex;flex-direction:column;gap:12px">
-      <div class="card card-p" style="font-size:11px;color:var(--t2)">Проект: <strong id="images-project-label"></strong></div>
-      <div class="field"><label class="flbl">Промт</label><textarea class="finp" id="img-prompt" rows="4" placeholder="Опишите изображение..."></textarea></div>
-      <div class="field"><label class="flbl">Стиль</label>
-        <select class="finp" id="img-style"><option>Cinematic</option><option>Digital Art</option><option>Anime</option><option>Photography</option></select>
-      </div>
-      <div class="field"><label class="flbl">Размер</label>
-        <select class="finp" id="img-size"><option>1:1</option><option>16:9</option><option>9:16</option></select>
-      </div>
-      <div class="field"><label class="flbl">Количество</label>
-        <select class="finp" id="img-count"><option>1</option><option>2</option><option>4</option></select>
-      </div>
-      <button class="btn btn-primary" style="width:100%" onclick="generateImages()">◎ Генерировать</button>
-    </div>
-    <div style="flex:1;overflow-y:auto;padding:18px">
-      <div class="sec"><div class="sec-title">Элементы проекта</div></div>
-      <div class="img-grid" id="img-gallery"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ════ MUSIC ════ -->
-<div class="panel" id="page-music">
-  <div class="topbar">
-    <div class="tb-title">Музыка</div>
-  </div>
-  <div class="scroll-body">
-    <div class="g2">
-      <div>
-        <div class="sec"><div class="sec-title">Анализ трека</div></div>
-        <div class="card card-p">
-          <div class="field"><label class="flbl">Текст или ссылка</label>
-            <textarea class="finp" id="music-input" rows="6" placeholder="Вставь текст трека или ссылку..."></textarea>
-          </div>
-          <button class="btn btn-primary" onclick="analyzeMusic()">♫ Анализировать</button>
-        </div>
-      </div>
-      <div>
-        <div class="sec"><div class="sec-title">Статистика</div></div>
-        <div id="music-stats"></div>
-      </div>
-    </div>
-    <div class="divider"></div>
-    <div class="sec"><div class="sec-title">AI Идеи</div></div>
-    <div id="music-ideas"></div>
   </div>
 </div>
 
@@ -1302,6 +1291,10 @@ let STATE = {
   currentProject: null,
   ws: null,
   attachedFile: null,
+  ui: {
+    showSecondaryDashboard: false,
+    projectAssetTab: 'scripts',
+  },
 };
 
 /* ══════════════════════════════════════
@@ -1714,11 +1707,9 @@ function goPage(page, el) {
   if(page==='projects') renderProjectHQ();
   if(page==='tasks') renderTasks();
   if(page==='agents') renderAgents();
-  if(page==='scripts') renderScripts();
   if(page==='habits') renderHabits();
   if(page==='finances') renderFinances();
   if(page==='youtube') loadYT();
-  if(page==='music') renderMusicPage();
   if(window.innerWidth<768) toggleSidebar(false);
 }
 
@@ -1796,8 +1787,18 @@ function renderDashboard() {
   renderDashStats();
   renderDashTasks();
   renderDashAgents();
-  renderDashHabits();
-  renderDashFinance();
+  const secondary = document.getElementById('dash-secondary');
+  if (secondary) {
+    secondary.hidden = !STATE.ui.showSecondaryDashboard;
+  }
+  if (STATE.ui.showSecondaryDashboard) {
+    renderDashHabits();
+    renderDashFinance();
+  }
+}
+function toggleDashboardSecondary() {
+  STATE.ui.showSecondaryDashboard = !STATE.ui.showSecondaryDashboard;
+  renderDashboard();
 }
 function renderDashGreeting() {
   const h = new Date().getHours();
@@ -1902,10 +1903,6 @@ function populateProjectSelects() {
     });
     taskProject.value = STATE.currentProject?.name || STATE.projects[0]?.name || '';
   }
-  const sp = document.getElementById('scripts-project-label');
-  if(sp) sp.textContent = STATE.currentProject?.name || '—';
-  const ip = document.getElementById('images-project-label');
-  if(ip) ip.textContent = STATE.currentProject?.name || '—';
 }
 function renderProjects() {
   const el = document.getElementById('projects-grid'); if(!el) return;
@@ -1957,6 +1954,39 @@ function renderProjectHQ() {
       <div class="task-deadline">${t.status==='inprogress'?'in progress':(t.done?'done':'todo')}</div>
     </div>
   `).join('') || '<div style="text-align:center;color:var(--t3);padding:10px">Нет execution-задач в проекте</div>';
+  updateProjectAssetsPanel();
+}
+function updateProjectAssetsPanel() {
+  const label = document.getElementById('project-assets-label');
+  if (label) label.textContent = STATE.currentProject?.name || '—';
+  const tabs = ['scripts', 'images', 'music'];
+  tabs.forEach((tab) => {
+    const btn = document.getElementById(`tab-${tab}`);
+    const panel = document.getElementById(`project-tab-${tab}`);
+    const active = STATE.ui.projectAssetTab === tab;
+    if (btn) btn.classList.toggle('active', active);
+    if (panel) panel.hidden = !active;
+  });
+  const primary = document.getElementById('project-assets-primary');
+  if (primary) {
+    if (STATE.ui.projectAssetTab === 'images') {
+      primary.textContent = '◎ Генерировать';
+      primary.onclick = () => generateImages();
+    } else if (STATE.ui.projectAssetTab === 'music') {
+      primary.textContent = '♫ Анализировать';
+      primary.onclick = () => analyzeMusic();
+    } else {
+      primary.textContent = '+ Новый сценарий';
+      primary.onclick = () => createScript();
+    }
+  }
+  renderScripts();
+  renderImages();
+  renderMusicPage();
+}
+function setProjectAssetTab(tab) {
+  STATE.ui.projectAssetTab = tab;
+  updateProjectAssetsPanel();
 }
 function renderProjSwitcher() {
   const el = document.getElementById('proj-switcher-list'); if(!el) return;
@@ -2338,7 +2368,6 @@ function initDrop(){
 function renderScripts(filter=''){
   const list=document.getElementById('scripts-list'); if(!list) return;
   const scripts=STATE.scripts.filter((s)=>s.project===STATE.currentProject?.name).filter(s=>!filter||s.title.toLowerCase().includes(filter.toLowerCase()));
-  document.getElementById('script-badge').textContent=scripts.length;
   populateProjectSelects();
   list.innerHTML = '';
   if(!scripts.length){list.innerHTML=`<div style="text-align:center;padding:20px;font-size:11px;color:var(--t3)">Нет сценариев в текущем проекте</div>`;return;}
@@ -2673,7 +2702,6 @@ function toast(msg,type='i'){
 function updateBadges(){
   const taskOpen=STATE.tasks.filter(t=>!t.done && t.project===STATE.currentProject?.name).length;
   const el=document.getElementById('task-badge'); if(el) el.textContent=taskOpen;
-  const sb=document.getElementById('script-badge'); if(sb) sb.textContent=STATE.scripts.filter(s=>s.project===STATE.currentProject?.name).length;
   renderDashStats();
 }
 function buildAIResponse(output, actions=[], tasks=[]) {
