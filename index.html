@@ -222,6 +222,35 @@ body {
 .nb-p { background:var(--pd); color:var(--pl) }
 .nb-g { background:var(--gd); color:var(--green) }
 .nb-o { background:var(--od); color:var(--orange) }
+.maturity-badge {
+  margin-left:auto;
+  font-size:8px;
+  font-family:var(--mono);
+  font-weight:700;
+  letter-spacing:.3px;
+  text-transform:uppercase;
+  padding:1px 5px;
+  border-radius:9px;
+}
+.maturity-ready { background:var(--gd); color:var(--green) }
+.maturity-beta { background:var(--od); color:var(--orange) }
+.maturity-alpha { background:var(--rd); color:var(--red) }
+.nav-group-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:10px 8px 4px;
+}
+.nav-group-row .nav-label { padding:0 }
+.labs-toggle {
+  background:transparent;
+  border:none;
+  color:var(--t3);
+  font-size:10px;
+  cursor:pointer;
+}
+.labs-toggle:hover { color:var(--t1) }
 
 /* Sidebar bottom */
 .sidebar-foot {
@@ -873,22 +902,7 @@ input[type=file] { display:none }
     </div>
   </div>
 
-  <div class="sidebar-nav">
-    <div class="nav-group">
-      <div class="nav-label">Execution Path</div>
-      <div class="nav-item active" data-page="dashboard" onclick="goPage('dashboard',this)">
-        <span class="nav-icon">☀</span>Today
-      </div>
-      <div class="nav-item" data-page="projects" onclick="goPage('projects',this)">
-        <span class="nav-icon">◫</span>Project HQ
-        <span class="nav-badge nb-p" id="proj-cnt">0</span>
-      </div>
-      <div class="nav-item" data-page="chat" onclick="goPage('chat',this)">
-        <span class="nav-icon">◻</span>AI Workspace
-        <span class="nav-badge nb-o" id="task-badge">0</span>
-      </div>
-    </div>
-  </div>
+  <div class="sidebar-nav" id="sidebar-nav"></div>
   </div>
 
   <div class="sidebar-foot">
@@ -908,7 +922,7 @@ input[type=file] { display:none }
 <div class="workspace">
 
 <!-- ════ DASHBOARD ════ -->
-<div class="panel on" id="page-dashboard">
+<div class="panel" id="page-dashboard">
   <div class="topbar">
     <div class="tb-title">Today</div>
     <span class="tb-sub" id="dash-date"></span>
@@ -972,7 +986,7 @@ input[type=file] { display:none }
 </div>
 
 <!-- ════ PROJECTS ════ -->
-<div class="panel" id="page-projects">
+<div class="panel on" id="page-projects">
   <div class="topbar">
     <div class="tb-title">Project HQ</div>
     <div class="tb-actions">
@@ -1379,6 +1393,17 @@ let STATE = {
   },
 };
 
+const MODULES = [
+  { id:'projects', title:'Projects', icon:'◫', maturity:'ready', section:'core', integrated:true, badgeId:'proj-cnt', badgeClass:'nb-p' },
+  { id:'chat', title:'Chat', icon:'◻', maturity:'ready', section:'core', integrated:true, badgeId:'task-badge', badgeClass:'nb-o' },
+  { id:'tasks', title:'Tasks', icon:'☑', maturity:'ready', section:'core', integrated:true },
+  { id:'dashboard', title:'Today', icon:'☀', maturity:'beta', section:'labs', integrated:true },
+  { id:'agents', title:'Agents', icon:'◇', maturity:'alpha', section:'labs', integrated:false },
+  { id:'youtube', title:'YouTube', icon:'▶', maturity:'alpha', section:'labs', integrated:false },
+  { id:'finances', title:'Finances', icon:'¤', maturity:'alpha', section:'labs', integrated:false },
+  { id:'habits', title:'Habits', icon:'◌', maturity:'alpha', section:'labs', integrated:false },
+];
+
 /* ══════════════════════════════════════
    SUPABASE CONFIG
 ══════════════════════════════════════ */
@@ -1717,6 +1742,7 @@ async function init() {
   seedIfEmpty();
   initAgents();
   renderDashboard();
+  renderNavigation();
   renderProjects();
   renderTasks();
   renderAgents();
@@ -1774,8 +1800,62 @@ function seedIfEmpty() {
 /* ══════════════════════════════════════
    NAVIGATION
 ══════════════════════════════════════ */
-let currentPage = 'dashboard';
+let currentPage = 'projects';
+let labsExpanded = false;
+function getMaturityMeta(level) {
+  const map = {
+    ready: { cls:'maturity-ready', label:'ready' },
+    beta: { cls:'maturity-beta', label:'beta' },
+    alpha: { cls:'maturity-alpha', label:'alpha' },
+  };
+  return map[level] || map.alpha;
+}
+function navItemHTML(module) {
+  const maturity = getMaturityMeta(module.maturity);
+  const badge = module.badgeId
+    ? `<span class="nav-badge ${module.badgeClass || 'nb-p'}" id="${module.badgeId}">0</span>`
+    : `<span class="maturity-badge ${maturity.cls}">${maturity.label}</span>`;
+  return `
+    <div class="nav-item ${module.id===currentPage?'active':''}" data-page="${module.id}" onclick="goPage('${module.id}',this)">
+      <span class="nav-icon">${module.icon}</span>${module.title}
+      ${badge}
+    </div>
+  `;
+}
+function renderNavigation() {
+  const root = document.getElementById('sidebar-nav');
+  if (!root) return;
+  const core = MODULES.filter((m)=>m.section==='core' && m.integrated);
+  const labs = MODULES.filter((m)=>m.section==='labs');
+  root.innerHTML = `
+    <div class="nav-group">
+      <div class="nav-label">Core Flow</div>
+      ${core.map(navItemHTML).join('')}
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-row">
+        <div class="nav-label">Labs</div>
+        <button class="labs-toggle" onclick="toggleLabs()">${labsExpanded ? 'Hide' : 'Show'}</button>
+      </div>
+      <div id="labs-items" ${labsExpanded ? '' : 'hidden'}>
+        ${labs.map(navItemHTML).join('')}
+      </div>
+    </div>
+  `;
+}
+function toggleLabs() {
+  labsExpanded = !labsExpanded;
+  renderNavigation();
+  updateBadges();
+}
 function goPage(page, el) {
+  const module = MODULES.find((m)=>m.id===page);
+  if (!module) return;
+  if (module.section==='labs' && !labsExpanded) {
+    labsExpanded = true;
+    renderNavigation();
+    el = document.querySelector(`.nav-item[data-page="${page}"]`);
+  }
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const panel = document.getElementById('page-'+page);
