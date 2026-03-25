@@ -929,6 +929,8 @@ input[type=file] { display:none }
 
     <div class="g4" id="dash-stats" style="margin-bottom:20px"></div>
 
+    <div class="card card-p" id="dash-focus" style="margin-bottom:20px"></div>
+
     <div class="g2" style="margin-bottom:20px">
       <!-- Tasks -->
       <div>
@@ -1088,12 +1090,7 @@ input[type=file] { display:none }
         <span style="font-size:10px;color:var(--t3)" id="mode-hint">Умный ассистент</span>
       </div>
 
-      <div class="chat-chips">
-        <div class="chip" onclick="quickMsg('Сформируй outcome по проекту: ')">☀ Outcome</div>
-        <div class="chip" onclick="quickMsg('Добавь в action queue: ')">☑ Queue item</div>
-        <div class="chip" onclick="quickMsg('Создай сценарий YouTube Shorts: ')">≡ Сценарий</div>
-        <div class="chip" onclick="quickMsg('Запусти анализ трендов по теме: ')">📈 Тренды</div>
-      </div>
+      <div class="chat-chips" id="chat-chips"></div>
 
       <div class="chat-input-area">
         <div class="drop-ov" id="drop-ov">📂 Отпустите файл</div>
@@ -1374,6 +1371,7 @@ let STATE = {
   ui: {
     showSecondaryDashboard: false,
     projectAssetTab: 'scripts',
+    focusTaskId: null,
   },
   ai: {
     confidenceThreshold: 0.72,
@@ -1788,7 +1786,10 @@ function goPage(page, el) {
     if(nav) nav.classList.add('active');
   }
   currentPage = page;
-  if(page==='chat') setTimeout(()=>{ document.getElementById('chat-inp')?.focus(); scrollChat(); },80);
+  if(page==='chat') {
+    renderChatFocus();
+    setTimeout(()=>{ document.getElementById('chat-inp')?.focus(); scrollChat(); },80);
+  }
   if(page==='chat') renderActionQueue();
   if(page==='projects') renderProjectHQ();
   if(page==='tasks') renderTasks();
@@ -1869,22 +1870,91 @@ function updateDashDate() {
   if(el) el.textContent = new Date().toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'});
 }
 function renderDashboard() {
+  syncDashboardFocus();
   renderDashGreeting();
   renderDashStats();
+  renderDashFocus();
   renderDashTasks();
   renderDashAgents();
   const secondary = document.getElementById('dash-secondary');
+  const canShowSecondary = isCoreOutcomeDone();
   if (secondary) {
-    secondary.hidden = !STATE.ui.showSecondaryDashboard;
+    secondary.hidden = !(STATE.ui.showSecondaryDashboard && canShowSecondary);
   }
-  if (STATE.ui.showSecondaryDashboard) {
+  if (STATE.ui.showSecondaryDashboard && canShowSecondary) {
     renderDashHabits();
     renderDashFinance();
   }
+  renderChatFocus();
 }
 function toggleDashboardSecondary() {
+  if (!isCoreOutcomeDone()) {
+    toast('Сначала завершите главный outcome дня', 'i');
+    return;
+  }
   STATE.ui.showSecondaryDashboard = !STATE.ui.showSecondaryDashboard;
   renderDashboard();
+}
+function getProjectTasksForFocus() {
+  return STATE.tasks.filter((t)=>t.project===STATE.currentProject?.name);
+}
+function focusSortWeight(task) {
+  const prio = task.prio === 'high' ? 0 : task.prio === 'med' ? 1 : 2;
+  return prio * 10 + (task.done ? 10 : 0);
+}
+function syncDashboardFocus() {
+  const projectTasks = getProjectTasksForFocus();
+  if (!projectTasks.length) {
+    STATE.ui.focusTaskId = null;
+    return;
+  }
+  const focused = projectTasks.find((t)=>t.id===STATE.ui.focusTaskId);
+  if (focused && !focused.done) return;
+  const nextCore = projectTasks
+    .filter((t)=>!t.done)
+    .sort((a,b)=>focusSortWeight(a)-focusSortWeight(b))[0];
+  STATE.ui.focusTaskId = nextCore?.id || null;
+}
+function getFocusBundle() {
+  const projectTasks = getProjectTasksForFocus();
+  const core = projectTasks.find((t)=>t.id===STATE.ui.focusTaskId) || null;
+  const supporting = projectTasks
+    .filter((t)=>!t.done && t.id!==core?.id)
+    .sort((a,b)=>focusSortWeight(a)-focusSortWeight(b))
+    .slice(0,2);
+  return { core, supporting };
+}
+function isCoreOutcomeDone() {
+  const { core } = getFocusBundle();
+  return !core || core.done;
+}
+function renderDashFocus() {
+  const el = document.getElementById('dash-focus'); if(!el) return;
+  const { core, supporting } = getFocusBundle();
+  const secondaryLocked = !isCoreOutcomeDone();
+  if (!core) {
+    el.innerHTML = '<div style="font-size:13px;font-weight:700;margin-bottom:10px">Сегодня: 1 главный результат + 2 поддерживающие задачи</div><div style="font-size:11px;color:var(--t2)">Главный результат не выбран — добавьте outcome в текущий проект.</div>';
+    return;
+  }
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700">Сегодня: 1 главный результат + 2 поддерживающие задачи</div>
+      <span class="pill ${secondaryLocked?'pill-busy':'pill-done'}">${secondaryLocked?'secondary locked':'secondary unlocked'}</span>
+    </div>
+    <div class="task-item" onclick="toggleTask(${core.id})">
+      <div class="task-prio prio-${core.prio}"></div>
+      <div class="task-check ${core.done?'done':''}" onclick="event.stopPropagation();toggleTask(${core.id})">${core.done?'✓':''}</div>
+      <div class="task-title"><strong>Главный результат:</strong> ${esc(core.title)}</div>
+    </div>
+    <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+      ${supporting.length ? supporting.map((task, idx)=>`
+        <div class="task-item" onclick="toggleTask(${task.id})">
+          <div class="task-prio prio-${task.prio}"></div>
+          <div class="task-check ${task.done?'done':''}" onclick="event.stopPropagation();toggleTask(${task.id})">${task.done?'✓':''}</div>
+          <div class="task-title">Поддерживающая ${idx+1}: ${esc(task.title)}</div>
+        </div>`).join('') : '<div style="font-size:11px;color:var(--t3)">Добавьте ещё 2 поддерживающие задачи.</div>'}
+    </div>
+  `;
 }
 function renderDashGreeting() {
   const h = new Date().getHours();
@@ -2408,6 +2478,27 @@ function onModeChange(){
   const m=document.getElementById('chat-mode').value;
   const el=document.getElementById('mode-hint'); if(el) el.textContent=MODE_HINTS[m]||'';
 }
+function renderChatFocus() {
+  const chips = document.getElementById('chat-chips');
+  const status = document.getElementById('chat-status-lbl');
+  if (!chips) return;
+  const { core, supporting } = getFocusBundle();
+  if (!core) {
+    chips.innerHTML = '<div class="chip" onclick="quickMsg(\'Помоги выбрать главный outcome дня\')">☀ Выбрать outcome</div>';
+    if (status) status.textContent = 'Фокус не задан: сформулируйте главный результат дня';
+    return;
+  }
+  if (status) status.textContent = `Фокус: ${core.title}`;
+  const suggestions = [
+    { label: '☀ Следующий шаг', msg: `Дай следующий шаг по главному outcome: ${core.title}` },
+    { label: '☑ Снять блокер', msg: `Какие риски мешают outcome "${core.title}" и как их снять?` },
+    { label: '⏱ 30-мин спринт', msg: `Собери 30-минутный план выполнения outcome: ${core.title}` },
+  ];
+  supporting.forEach((task, idx) => {
+    suggestions.push({ label: `↳ Поддержка ${idx+1}`, msg: `Свяжи supporting-задачу "${task.title}" с главным outcome "${core.title}"` });
+  });
+  chips.innerHTML = suggestions.slice(0,4).map((s)=>`<div class="chip" onclick="quickMsg(${JSON.stringify(s.msg)})">${s.label}</div>`).join('');
+}
 function addWelcome(){
   addAIMsg(buildAIResponse(
     'Готов работать в режиме execution. Сформулируй outcome, и я разложу его на действия.',
@@ -2436,6 +2527,11 @@ function addAIMsg(text, type='plain') {
   autoCreateTasksFromAI(normalized, msg.id);
 }
 function getAIActions(text,type) {
+  const { core } = getFocusBundle();
+  if (core && !core.done) {
+    const actionText = `Разложи outcome "${core.title}" на 3 шага и критерий done`;
+    return `<div class="ai-actions"><div class="ai-action" onclick="quickMsg(${JSON.stringify(actionText)})">☀ Фокус на active outcome</div></div>`;
+  }
   const actions=[];
   if(/задач|сделать|нужно/i.test(text)) actions.push({label:'☑ Добавить задачу',fn:`addTaskFromText(${JSON.stringify(text.slice(0,60))})`});
   if(/сценари|видео|shorts/i.test(text)) actions.push({label:'≡ Сохранить сценарий',fn:`saveScriptFromChat(${JSON.stringify(text.slice(0,200))})`});
