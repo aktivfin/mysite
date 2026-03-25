@@ -764,7 +764,7 @@ input[type=file] { display:none }
     <div class="active-project" onclick="openModal('modal-projects')">
       <div class="proj-ic" id="sb-proj-ic" style="background:rgba(124,92,255,.15)">🎬</div>
       <div class="proj-name" id="sb-proj-name">YouTube канал</div>
-      <div class="proj-arrow">⌄</div>
+      <div class="proj-arrow">Выбрать</div>
     </div>
   </div>
 
@@ -791,7 +791,7 @@ input[type=file] { display:none }
         <span class="nav-badge nb-o" id="task-badge">0</span>
       </div>
       <div class="nav-item" data-page="agents" onclick="goPage('agents',this)">
-        <span class="nav-icon">◈</span>Агенты
+        <span class="nav-icon">🤖</span>Агенты
         <span class="nav-badge nb-g" id="agent-badge">8</span>
       </div>
     </div>
@@ -816,7 +816,7 @@ input[type=file] { display:none }
     <div class="nav-group">
       <div class="nav-label">Жизнь</div>
       <div class="nav-item" data-page="finances" onclick="goPage('finances',this)">
-        <span class="nav-icon">◈</span>Деньги
+        <span class="nav-icon">💰</span>Деньги
       </div>
       <div class="nav-item" data-page="habits" onclick="goPage('habits',this)">
         <span class="nav-icon">↺</span>Привычки
@@ -877,7 +877,7 @@ input[type=file] { display:none }
       <div>
         <div class="sec">
           <div class="sec-title">Агенты</div>
-          <button class="btn btn-ghost btn-xs" onclick="goPage('agents')">Все →</button>
+          <button class="btn btn-ghost btn-xs" onclick="goPage('agents')">Все агенты</button>
         </div>
         <div id="dash-agents"></div>
       </div>
@@ -888,7 +888,7 @@ input[type=file] { display:none }
       <div>
         <div class="sec">
           <div class="sec-title">Привычки</div>
-          <button class="btn btn-ghost btn-xs" onclick="goPage('habits')">Все →</button>
+          <button class="btn btn-ghost btn-xs" onclick="goPage('habits')">Все привычки</button>
         </div>
         <div id="dash-habits"></div>
       </div>
@@ -896,7 +896,7 @@ input[type=file] { display:none }
       <div>
         <div class="sec">
           <div class="sec-title">Финансы</div>
-          <button class="btn btn-ghost btn-xs" onclick="goPage('finances')">Все →</button>
+          <button class="btn btn-ghost btn-xs" onclick="goPage('finances')">Все финансы</button>
         </div>
         <div id="dash-finance"></div>
       </div>
@@ -1036,18 +1036,20 @@ input[type=file] { display:none }
   <div class="topbar">
     <div class="tb-title">Сценарии</div>
     <div class="tb-actions">
-      <button class="btn btn-ghost btn-sm" onclick="goPage('chat')">+ Создать в чате</button>
+      <button class="btn btn-ghost btn-sm" onclick="goPage('chat')">Создать в чате</button>
+      <button class="btn btn-primary btn-sm" onclick="createScript()">+ Новый сценарий</button>
     </div>
   </div>
-  <div style="display:flex;flex:1;overflow:hidden">
-    <div style="width:240px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--bg1)">
-      <div style="padding:12px">
-        <input class="finp" placeholder="Поиск..." id="sc-search" oninput="filterScripts(this.value)" style="font-size:11px">
-      </div>
-      <div style="flex:1;overflow-y:auto;padding:8px" id="scripts-list"></div>
+  <div class="scroll-body">
+    <div class="card card-p" style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--t2)">Проект: <strong id="scripts-project-label"></strong></div>
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-      <div style="flex:1;overflow-y:auto;padding:22px" id="script-editor">
+    <div class="g2">
+      <div>
+        <input class="finp" placeholder="Поиск..." id="sc-search" oninput="filterScripts(this.value)" style="font-size:11px;margin-bottom:10px">
+        <div id="scripts-list"></div>
+      </div>
+      <div id="script-editor">
         <div style="text-align:center;padding:60px;color:var(--t3)">
           <div style="font-size:36px;margin-bottom:10px">≡</div>
           <div style="font-size:12px">Выберите сценарий</div>
@@ -1061,9 +1063,13 @@ input[type=file] { display:none }
 <div class="panel" id="page-images">
   <div class="topbar">
     <div class="tb-title">Изображения</div>
+    <div class="tb-actions">
+      <button class="btn btn-primary btn-sm" onclick="generateImages()">+ Новое изображение</button>
+    </div>
   </div>
   <div style="display:flex;flex:1;overflow:hidden">
     <div style="width:260px;flex-shrink:0;border-right:1px solid var(--border);padding:18px;overflow-y:auto;background:var(--bg1);display:flex;flex-direction:column;gap:12px">
+      <div class="card card-p" style="font-size:11px;color:var(--t2)">Проект: <strong id="images-project-label"></strong></div>
       <div class="field"><label class="flbl">Промт</label><textarea class="finp" id="img-prompt" rows="4" placeholder="Опишите изображение..."></textarea></div>
       <div class="field"><label class="flbl">Стиль</label>
         <select class="finp" id="img-style"><option>Cinematic</option><option>Digital Art</option><option>Anime</option><option>Photography</option></select>
@@ -1077,6 +1083,7 @@ input[type=file] { display:none }
       <button class="btn btn-primary" style="width:100%" onclick="generateImages()">◎ Генерировать</button>
     </div>
     <div style="flex:1;overflow-y:auto;padding:18px">
+      <div class="sec"><div class="sec-title">Элементы проекта</div></div>
       <div class="img-grid" id="img-gallery"></div>
     </div>
   </div>
@@ -1282,7 +1289,6 @@ input[type=file] { display:none }
 /* ══════════════════════════════════════
    STATE
 ══════════════════════════════════════ */
-const PASS = '1234';
 let STATE = {
   projects: [],
   tasks: [],
@@ -1300,42 +1306,62 @@ let STATE = {
 function save() {
   try {
     const d = {
-      projects:  STATE.projects,
-      tasks:     STATE.tasks,
-      habits:    STATE.habits,
-      finances:  STATE.finances,
-      scripts:   STATE.scripts,
-      messages:  STATE.messages.slice(-200),
+      projects: STATE.projects,
+      tasks: STATE.tasks,
+      habits: STATE.habits,
+      finances: STATE.finances,
+      scripts: STATE.scripts,
+      messages: STATE.messages.slice(-200),
+      images: STATE.images,
+      agents: STATE.agents,
+      currentProjectId: STATE.currentProject?.id || null,
     };
-    localStorage.setItem('oc_os_v1', JSON.stringify(d));
+    localStorage.setItem('oc_os_v2', JSON.stringify(d));
   } catch(e){}
 }
 function load() {
   try {
-    const d = JSON.parse(localStorage.getItem('oc_os_v1')||'{}');
+    const d = JSON.parse(localStorage.getItem('oc_os_v2')||localStorage.getItem('oc_os_v1')||'{}');
     if(d.projects)  STATE.projects  = d.projects;
     if(d.tasks)     STATE.tasks     = d.tasks;
     if(d.habits)    STATE.habits    = d.habits;
     if(d.finances)  STATE.finances  = d.finances;
     if(d.scripts)   STATE.scripts   = d.scripts;
     if(d.messages)  STATE.messages  = d.messages;
+    if(d.images)    STATE.images    = d.images;
+    if(d.agents)    STATE.agents    = d.agents;
+    if(d.currentProjectId) STATE.currentProject = {id:d.currentProjectId};
   } catch(e){}
 }
 
 /* ══════════════════════════════════════
    LOGIN
 ══════════════════════════════════════ */
-function doLogin() {
-  const v = document.getElementById('pin').value;
-  if(v === PASS || v === '') {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').className = 'on';
-    init();
-  } else {
-    const e = document.getElementById('login-err');
+async function hashText(value) {
+  const data = new TextEncoder().encode(value);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+async function doLogin() {
+  const v = document.getElementById('pin').value.trim();
+  const e = document.getElementById('login-err');
+  if(!v) {
+    e.textContent = 'Введите код доступа';
+    return;
+  }
+  const storedHash = localStorage.getItem('oc_access_hash');
+  const inputHash = await hashText(v);
+  if(!storedHash) {
+    localStorage.setItem('oc_access_hash', inputHash);
+    toast('Код доступа сохранён', 's');
+  } else if (storedHash !== inputHash) {
     e.textContent = 'Неверный код';
     setTimeout(()=>e.textContent='',2000);
+    return;
   }
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').className = 'on';
+  init();
 }
 
 /* ══════════════════════════════════════
@@ -1352,11 +1378,13 @@ function init() {
   renderScripts();
   renderHabits();
   renderFinances();
+  renderImages();
   renderYT();
   buildCmd();
   addWelcome();
   connectWS();
   initDrop();
+  switchProject(STATE.currentProject?.id);
   updateBadges();
   updateDashDate();
   setInterval(updateDashDate, 60000);
@@ -1369,10 +1397,9 @@ function seedIfEmpty() {
       {id:2,name:'Музыка',type:'Музыка',icon:'🎵',color:'#1ABC9C',tasks:0,scripts:0},
       {id:3,name:'Личные задачи',type:'Жизнь',icon:'🌱',color:'#2ECC71',tasks:0,scripts:0},
     ];
-    STATE.currentProject = STATE.projects[0];
-  } else {
-    STATE.currentProject = STATE.projects[0];
   }
+  if(!STATE.currentProject || !STATE.currentProject.id) STATE.currentProject = STATE.projects[0];
+  STATE.currentProject = STATE.projects.find((p)=>p.id===STATE.currentProject.id) || STATE.projects[0];
   if(!STATE.habits.length) {
     STATE.habits = [
       {id:1,name:'Утренняя пробежка',icon:'🏃',streak:5,today:false,history:[1,1,1,1,1,0,0]},
@@ -1396,6 +1423,7 @@ function seedIfEmpty() {
       {id:4,type:'expense',amount:1800,desc:'Продукты',cat:'Продукты',date:'2025-03-16'},
     ];
   }
+  populateProjectSelects();
 }
 
 /* ══════════════════════════════════════
@@ -1440,16 +1468,18 @@ function connectWS() {
   const lbl = document.getElementById('ws-lbl');
   dot.className = 'ws-dot ws-connecting'; lbl.textContent = 'Подключение...';
   try {
-    STATE.ws = new WebSocket('ws://127.0.0.1:18789');
+    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${protocol}://${location.hostname}:18789`;
+    STATE.ws = new WebSocket(wsUrl);
     STATE.ws.onopen = ()=>{
-      dot.className='ws-dot ws-on'; lbl.textContent='ws://127.0.0.1:18789';
+      dot.className='ws-dot ws-on'; lbl.textContent=wsUrl;
       toast('OpenClaw подключён','s');
     };
     STATE.ws.onmessage = (e)=>{ handleWSMsg(e.data); };
     STATE.ws.onclose = ()=>{
       dot.className='ws-dot ws-off'; lbl.textContent='Нет подключения';
       STATE.ws=null;
-      setTimeout(connectWS, 5000);
+      setTimeout(connectWS, 7000);
     };
     STATE.ws.onerror = ()=>{
       dot.className='ws-dot ws-off'; lbl.textContent='Нет подключения';
@@ -1506,7 +1536,7 @@ function renderDashGreeting() {
   if(el) el.textContent = gr + ', Operator';
   const tc = document.getElementById('dash-task-cnt');
   const hc = document.getElementById('dash-habit-cnt');
-  if(tc) tc.textContent = STATE.tasks.filter(t=>!t.done).length;
+  if(tc) tc.textContent = STATE.tasks.filter(t=>!t.done && t.project===STATE.currentProject?.name).length;
   if(hc) hc.textContent = STATE.habits.filter(h=>!h.today).length;
 }
 function renderDashStats() {
@@ -1514,8 +1544,8 @@ function renderDashStats() {
   const income = STATE.finances.filter(f=>f.type==='income').reduce((a,f)=>a+f.amount,0);
   const expense = STATE.finances.filter(f=>f.type==='expense').reduce((a,f)=>a+f.amount,0);
   const stats=[
-    {lbl:'Задач открыто',  val:STATE.tasks.filter(t=>!t.done).length, d:'',c:'ne'},
-    {lbl:'Сценариев',      val:STATE.scripts.length,                   d:'+0',c:'up'},
+    {lbl:'Задач открыто',  val:STATE.tasks.filter(t=>!t.done && t.project===STATE.currentProject?.name).length, d:'',c:'ne'},
+    {lbl:'Сценариев',      val:STATE.scripts.filter(s=>s.project===STATE.currentProject?.name).length, d:'+0',c:'up'},
     {lbl:'Баланс',         val:fmt_rub(income-expense),                d:'этот месяц',c:'up'},
     {lbl:'Привычки',       val:STATE.habits.filter(h=>h.today).length+'/'+STATE.habits.length, d:'сегодня',c:'ne'},
   ];
@@ -1528,7 +1558,7 @@ function renderDashStats() {
 }
 function renderDashTasks() {
   const el = document.getElementById('dash-tasks'); if(!el) return;
-  const tasks = STATE.tasks.filter(t=>!t.done).slice(0,5);
+  const tasks = STATE.tasks.filter(t=>!t.done && t.project===STATE.currentProject?.name).slice(0,5);
   if(!tasks.length){el.innerHTML=`<div style="text-align:center;padding:20px;font-size:11px;color:var(--t3)">Нет активных задач</div>`;return;}
   el.innerHTML=tasks.map(t=>`
     <div class="task-item" onclick="toggleTask(${t.id})">
@@ -1590,6 +1620,23 @@ function renderDashFinance() {
    PROJECTS
 ══════════════════════════════════════ */
 const PROJ_COLORS = ['#7C5CFF','#1ABC9C','#2ECC71','#F39C12','#E74C3C','#3498DB','#E91E8C'];
+function populateProjectSelects() {
+  const taskProject = document.getElementById('task-project');
+  if(taskProject) {
+    taskProject.innerHTML = '';
+    STATE.projects.forEach((project) => {
+      const option = document.createElement('option');
+      option.value = project.name;
+      option.textContent = project.name;
+      taskProject.appendChild(option);
+    });
+    taskProject.value = STATE.currentProject?.name || STATE.projects[0]?.name || '';
+  }
+  const sp = document.getElementById('scripts-project-label');
+  if(sp) sp.textContent = STATE.currentProject?.name || '—';
+  const ip = document.getElementById('images-project-label');
+  if(ip) ip.textContent = STATE.currentProject?.name || '—';
+}
 function renderProjects() {
   const el = document.getElementById('projects-grid'); if(!el) return;
   document.getElementById('proj-cnt').textContent = STATE.projects.length;
@@ -1604,8 +1651,8 @@ function renderProjects() {
         <span>≡ ${STATE.scripts.filter(s=>s.project===p.name).length} сценариев</span>
       </div>
       <div class="proj-card-foot">
-        <span class="pill pill-idle">${p.type}</span>
-        <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();switchProject(${p.id});goPage('chat')">Открыть чат →</button>
+        <span class="pill pill-idle">Проект</span>
+        <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();switchProject(${p.id});goPage('chat')">Открыть чат</button>
       </div>
     </div>`).join('')
   + `<div class="proj-card" style="border-style:dashed;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:180px;color:var(--t3)" onclick="openModal('modal-new-project')">
@@ -1632,6 +1679,12 @@ function switchProject(id) {
   document.getElementById('sb-proj-ic').style.background = p.color+'22';
   document.getElementById('sb-proj-name').textContent = p.name;
   document.getElementById('chat-proj-tag').textContent = p.name;
+  populateProjectSelects();
+  renderTasks();
+  renderScripts();
+  renderImages();
+  renderDashboard();
+  save();
   toast('Проект: '+p.name,'i');
 }
 function addProject() {
@@ -1640,6 +1693,7 @@ function addProject() {
   const icon = document.getElementById('proj-icon').value;
   const color = PROJ_COLORS[STATE.projects.length % PROJ_COLORS.length];
   STATE.projects.push({id:Date.now(),name,type,icon,color,tasks:0,scripts:0});
+  populateProjectSelects();
   save(); renderProjects(); closeModal('modal-new-project');
   document.getElementById('proj-title').value='';
   toast('Проект "'+name+'" создан','s');
@@ -1654,30 +1708,41 @@ function renderTasks() {
   const el = document.getElementById('tasks-view'); if(!el) return;
   if(taskView==='kanban') renderTasksKanban(el);
   else renderTasksList(el);
-  document.getElementById('task-badge').textContent = STATE.tasks.filter(t=>!t.done).length;
+  document.getElementById('task-badge').textContent = STATE.tasks.filter(t=>!t.done && t.project===STATE.currentProject?.name).length;
 }
 function renderTasksList(el) {
+  const projectTasks = STATE.tasks.filter((task)=>task.project===STATE.currentProject?.name);
   const groups = [
     {label:'Высокий приоритет',prio:'high'},
     {label:'Средний приоритет',prio:'med'},
     {label:'Низкий приоритет',prio:'low'},
   ];
   el.innerHTML = groups.map(g=>{
-    const tasks = STATE.tasks.filter(t=>t.prio===g.prio&&!t.done);
+    const tasks = projectTasks.filter(t=>t.prio===g.prio&&!t.done);
     if(!tasks.length) return '';
     return `<div style="margin-bottom:20px">
       <div class="sec"><div class="sec-title">${g.label}</div></div>
       ${tasks.map(t=>`
-        <div class="task-item">
+        <div class="task-item" data-task-id="${t.id}">
           <div class="task-prio prio-${t.prio}"></div>
           <div class="task-check ${t.done?'done':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
-          <div class="task-title">${esc(t.title)}</div>
+          <div class="task-title"></div>
           <div class="task-deadline">${t.deadline?formatDate(t.deadline):''}</div>
-          <span style="font-size:10px;color:var(--t3)">${esc(t.project)}</span>
+          <span style="font-size:10px;color:var(--t3)"></span>
           <button class="btn btn-xs btn-ghost" onclick="deleteTask(${t.id})">✕</button>
         </div>`).join('')}
     </div>`;
   }).join('') || '<div style="text-align:center;padding:40px;color:var(--t3)">Нет задач. Создайте первую!</div>';
+  el.querySelectorAll('.task-item').forEach((taskEl) => {
+    const titleNode = taskEl.querySelector('.task-title');
+    const projectNode = taskEl.querySelector('span');
+    const id = Number(taskEl.dataset.taskId);
+    const task = STATE.tasks.find((item) => item.id === id);
+    if(task) {
+      if(titleNode) titleNode.textContent = task.title;
+      if(projectNode) projectNode.textContent = task.project;
+    }
+  });
 }
 function renderTasksKanban(el) {
   const cols=[
@@ -1690,10 +1755,10 @@ function renderTasksKanban(el) {
       <div class="task-col-hd">
         <div style="width:6px;height:6px;border-radius:50%;background:${c.color}"></div>
         <span>${c.label}</span>
-        <span class="nav-badge nb-p" style="margin-left:auto">${STATE.tasks.filter(t=>t.status===c.id).length}</span>
+        <span class="nav-badge nb-p" style="margin-left:auto">${STATE.tasks.filter(t=>t.status===c.id && t.project===STATE.currentProject?.name).length}</span>
       </div>
       <div class="task-col-body">
-        ${STATE.tasks.filter(t=>t.status===c.id).map(t=>`
+        ${STATE.tasks.filter(t=>t.status===c.id && t.project===STATE.currentProject?.name).map(t=>`
           <div class="kanban-card">
             <div class="kanban-title">${esc(t.title)}</div>
             <div class="kanban-meta">
@@ -1706,12 +1771,17 @@ function renderTasksKanban(el) {
     </div>`).join('')}</div>`;
 }
 function addTask() {
-  const title = document.getElementById('task-title').value.trim(); if(!title) return;
+  const title = document.getElementById('task-title').value.trim();
+  const deadline = document.getElementById('task-deadline').value;
+  const prio = document.getElementById('task-prio').value;
+  if(!title) { toast('Введите название задачи','e'); return; }
+  if(!['high','med','low'].includes(prio)) { toast('Выберите корректный приоритет','e'); return; }
+  if(deadline && Number.isNaN(Date.parse(deadline))) { toast('Некорректная дата дедлайна','e'); return; }
   const task = {
     id:Date.now(), title,
     project: document.getElementById('task-project').value,
-    prio: document.getElementById('task-prio').value,
-    deadline: document.getElementById('task-deadline').value,
+    prio,
+    deadline,
     done:false, status:'todo',
   };
   STATE.tasks.unshift(task); save(); renderTasks(); renderDashboard();
@@ -1875,7 +1945,8 @@ async function sendChatMsg(){
   addUserMsg(text,img);
   // try WS
   if(!sendToWS(text)) {
-    document.getElementById('chat-status-lbl').textContent='Агент отвечает...';
+    document.getElementById('chat-status-lbl').textContent='Локальный режим (WS недоступен)';
+    toast('Нет WebSocket подключения: использован локальный ответ', 'i');
     showTyping();
     await sleep(900+rnd(200,700));
     hideTyping();
@@ -1952,16 +2023,26 @@ function initDrop(){
 ══════════════════════════════════════ */
 function renderScripts(filter=''){
   const list=document.getElementById('scripts-list'); if(!list) return;
-  document.getElementById('script-badge').textContent=STATE.scripts.length;
-  const scripts=STATE.scripts.filter(s=>!filter||s.title.toLowerCase().includes(filter.toLowerCase()));
-  if(!scripts.length){list.innerHTML=`<div style="text-align:center;padding:20px;font-size:11px;color:var(--t3)">Нет сценариев</div>`;return;}
-  list.innerHTML=scripts.map(s=>`
-    <div style="padding:10px 11px;border-radius:var(--rs);cursor:pointer;margin-bottom:5px;transition:background .14s;border:1px solid transparent;" onclick="openScript(${s.id})"
-      onmouseover="this.style.background='var(--glass)';this.style.borderColor='var(--border)'"
-      onmouseout="this.style.background='';this.style.borderColor='transparent'">
-      <div style="font-size:12px;font-weight:600;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.title)}</div>
-      <div style="font-size:10px;color:var(--t2)">${esc(s.project)} · ${s.created}</div>
-    </div>`).join('');
+  const scripts=STATE.scripts.filter((s)=>s.project===STATE.currentProject?.name).filter(s=>!filter||s.title.toLowerCase().includes(filter.toLowerCase()));
+  document.getElementById('script-badge').textContent=scripts.length;
+  populateProjectSelects();
+  list.innerHTML = '';
+  if(!scripts.length){list.innerHTML=`<div style="text-align:center;padding:20px;font-size:11px;color:var(--t3)">Нет сценариев в текущем проекте</div>`;return;}
+  scripts.forEach((script) => {
+    const item = document.createElement('div');
+    item.style.cssText = 'padding:10px 11px;border-radius:var(--rs);cursor:pointer;margin-bottom:5px;transition:background .14s;border:1px solid transparent;';
+    item.onmouseover=()=>{item.style.background='var(--glass)';item.style.borderColor='var(--border)';};
+    item.onmouseout=()=>{item.style.background='';item.style.borderColor='transparent';};
+    item.onclick=()=>openScript(script.id);
+    const title = document.createElement('div');
+    title.style.cssText='font-size:12px;font-weight:600;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    title.textContent = script.title;
+    const meta = document.createElement('div');
+    meta.style.cssText='font-size:10px;color:var(--t2)';
+    meta.textContent = `${script.project} · ${script.created}`;
+    item.append(title, meta);
+    list.appendChild(item);
+  });
 }
 function filterScripts(q){renderScripts(q);}
 function openScript(id){
@@ -1992,6 +2073,16 @@ function saveScript(id){
 function deleteScript(id){STATE.scripts=STATE.scripts.filter(s=>s.id!==id);save();renderScripts();updateBadges();document.getElementById('script-editor').innerHTML=`<div style="text-align:center;padding:60px;color:var(--t3)"><div style="font-size:36px;margin-bottom:10px">≡</div><div>Выберите сценарий</div></div>`;}
 function exportScript(id){const sc=STATE.scripts.find(s=>s.id===id);if(!sc) return;const a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(sc.text);a.download='script.txt';a.click();}
 function addScriptFromAI(d){STATE.scripts.unshift({id:Date.now(),title:d.title||'AI сценарий',project:STATE.currentProject?.name||'YouTube канал',text:d.content||'',created:tstamp()});save();renderScripts();updateBadges();}
+function createScript(){
+  const project = STATE.currentProject?.name;
+  if(!project) return;
+  const id = Date.now();
+  STATE.scripts.unshift({id,title:'Новый сценарий',project,text:'',created:tstamp()});
+  save();
+  renderScripts();
+  openScript(id);
+  toast('Создан пустой сценарий','s');
+}
 
 /* ══════════════════════════════════════
    IMAGES
@@ -2010,8 +2101,26 @@ async function generateImages(){
         <button class="btn btn-ghost btn-xs">Вариация</button>
       </div>
     </div>`).join('');
-  STATE.images.push({id:Date.now(),prompt,style:document.getElementById('img-style')?.value,created:tstamp()});
+  STATE.images.unshift({id:Date.now(),project:STATE.currentProject?.name,prompt,style:document.getElementById('img-style')?.value,created:tstamp()});
+  renderImages();
   toast('Изображения готовы (mock)','s');
+}
+function renderImages(){
+  const gallery=document.getElementById('img-gallery');
+  if(!gallery) return;
+  populateProjectSelects();
+  const projectImages = STATE.images.filter((image)=>image.project===STATE.currentProject?.name);
+  if(!projectImages.length){
+    gallery.innerHTML = '<div style="font-size:12px;color:var(--t3)">Нет изображений в текущем проекте</div>';
+    return;
+  }
+  gallery.innerHTML = projectImages.map((img)=>`
+    <div class="img-card" title="${esc(img.prompt)}">
+      <div class="img-ph">◎</div>
+      <div class="img-card-ov">
+        <button class="btn btn-ghost btn-xs">Скачать</button>
+      </div>
+    </div>`).join('');
 }
 
 /* ══════════════════════════════════════
@@ -2258,9 +2367,9 @@ function toast(msg,type='i'){
    BADGES + UTILS
 ══════════════════════════════════════ */
 function updateBadges(){
-  const taskOpen=STATE.tasks.filter(t=>!t.done).length;
+  const taskOpen=STATE.tasks.filter(t=>!t.done && t.project===STATE.currentProject?.name).length;
   const el=document.getElementById('task-badge'); if(el) el.textContent=taskOpen;
-  const sb=document.getElementById('script-badge'); if(sb) sb.textContent=STATE.scripts.length;
+  const sb=document.getElementById('script-badge'); if(sb) sb.textContent=STATE.scripts.filter(s=>s.project===STATE.currentProject?.name).length;
   renderDashStats();
 }
 function formatMsg(text){
