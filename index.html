@@ -1286,6 +1286,10 @@ input[type=file] { display:none }
 <div id="toasts"></div>
 
 <script>
+/* Supabase client (CDN) */
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
 /* ══════════════════════════════════════
    STATE
 ══════════════════════════════════════ */
@@ -1303,6 +1307,57 @@ let STATE = {
   attachedFile: null,
 };
 
+/* ══════════════════════════════════════
+   SUPABASE CONFIG
+══════════════════════════════════════ */
+const SUPABASE_CONFIG = {
+  url: 'https://qccrvwxiwhjwunbkcmkd.supabase.co',
+  anonKey: (window.__OC_SUPABASE_ANON_KEY__ || '').trim(),
+  apiBaseUrl: (window.__OC_API_BASE_URL__ || '').trim(),
+};
+let SB = {
+  client: null,
+  user: null,
+  ready: false,
+  hydrating: false,
+  syncTimer: null,
+};
+
+async function initSupabase() {
+  if (!window.supabase || !SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) return false;
+  try {
+    SB.client = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    const { data: sessData } = await SB.client.auth.getSession();
+    SB.user = sessData?.session?.user || null;
+    if (!SB.user) {
+      const { data, error } = await SB.client.auth.signInAnonymously();
+      if (error) throw error;
+      SB.user = data?.user || null;
+    }
+    SB.ready = !!SB.user;
+    return SB.ready;
+  } catch (e) {
+    console.warn('Supabase init failed:', e);
+    SB.ready = false;
+    return false;
+  }
+}
+
+function queueSupabaseSync() {
+  if (!SB.ready || SB.hydrating) return;
+  clearTimeout(SB.syncTimer);
+  SB.syncTimer = setTimeout(()=>syncToSupabase().catch(console.warn), 450);
+}
+
+function toIsoDate(value) {
+  if (!value) return new Date().toISOString().slice(0,10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const m = String(value).match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (m) return `${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+  const dt = new Date(value);
+  return Number.isNaN(dt.getTime()) ? new Date().toISOString().slice(0,10) : dt.toISOString().slice(0,10);
+}
+
 function save() {
   try {
     const d = {
@@ -1317,6 +1372,7 @@ function save() {
       currentProjectId: STATE.currentProject?.id || null,
     };
     localStorage.setItem('oc_os_v2', JSON.stringify(d));
+    queueSupabaseSync();
   } catch(e){}
 }
 function load() {
@@ -1332,6 +1388,219 @@ function load() {
     if(d.agents)    STATE.agents    = d.agents;
     if(d.currentProjectId) STATE.currentProject = {id:d.currentProjectId};
   } catch(e){}
+}
+
+async function loadFromSupabase() {
+  if (!SB.ready) return false;
+  SB.hydrating = true;
+  try {
+    const uid = SB.user.id;
+    const [projectsR, tasksR, habitsR, financeR, scriptsR, imagesR, threadsR] = await Promise.all([
+      SB.client.from('projects').select('*').eq('user_id', uid).order('created_at', { ascending: true }),
+      SB.client.from('tasks').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
+      SB.client.from('habits').select('*').eq('user_id', uid).order('created_at', { ascending: true }),
+      SB.client.from('finance_transactions').select('*').eq('user_id', uid).order('tx_date', { ascending: false }),
+      SB.client.from('scripts').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
+      SB.client.from('images').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
+      SB.client.from('chat_threads').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(1),
+    ]);
+    if (projectsR.error || tasksR.error || habitsR.error || financeR.error || scriptsR.error || imagesR.error || threadsR.error) return false;
+
+    const pRows = projectsR.data || [];
+    const projectMap = new Map(pRows.map((p)=>[p.id, p]));
+    if (pRows.length) {
+      STATE.projects = pRows.map((p, i)=>({
+        id: i + 1,
+        dbId: p.id,
+        name: p.name,
+        type: p.type || 'Проект',
+        icon: p.icon || '◻',
+        color: p.color || '#7C5CFF',
+        tasks: 0,
+        scripts: 0,
+      }));
+      STATE.currentProject = STATE.projects[0] || null;
+    }
+
+    const localProjectNameByDbId = new Map(STATE.projects.map((p)=>[p.dbId, p.name]));
+    if ((tasksR.data || []).length) {
+      STATE.tasks = (tasksR.data || []).map((t, i)=>({
+        id: i + 1,
+        title: t.title,
+        project: localProjectNameByDbId.get(t.project_id) || STATE.projects[0]?.name || 'Личные задачи',
+        prio: t.priority || 'med',
+        deadline: t.deadline || '',
+        done: !!t.done,
+        status: t.status || 'todo',
+      }));
+    }
+
+    if ((habitsR.data || []).length) {
+      STATE.habits = (habitsR.data || []).map((h, i)=>({
+        id: i + 1,
+        name: h.name,
+        icon: h.icon || '✓',
+        streak: h.streak || 0,
+        today: !!h.today_done,
+        history: [],
+      }));
+    }
+
+    if ((financeR.data || []).length) {
+      STATE.finances = (financeR.data || []).map((f, i)=>({
+        id: i + 1,
+        type: f.tx_type,
+        amount: Number(f.amount || 0),
+        desc: f.description || '',
+        cat: f.category || '',
+        date: f.tx_date || '',
+      }));
+    }
+
+    if ((scriptsR.data || []).length) {
+      STATE.scripts = (scriptsR.data || []).map((s, i)=>({
+        id: i + 1,
+        title: s.title,
+        project: localProjectNameByDbId.get(s.project_id) || STATE.projects[0]?.name || 'YouTube канал',
+        text: s.body || '',
+        created: new Date(s.created_at).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }),
+      }));
+    }
+
+    if ((imagesR.data || []).length) {
+      STATE.images = (imagesR.data || []).map((img, i)=>({
+        id: i + 1,
+        project: localProjectNameByDbId.get(img.project_id) || STATE.projects[0]?.name || 'YouTube канал',
+        prompt: img.prompt || '',
+        style: img.style || '',
+        created: new Date(img.created_at).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }),
+      }));
+    }
+
+    const thread = (threadsR.data || [])[0];
+    if (thread) {
+      const { data: msgs } = await SB.client
+        .from('chat_messages')
+        .select('*')
+        .eq('thread_id', thread.id)
+        .eq('user_id', uid)
+        .order('created_at', { ascending: true });
+      if (msgs?.length) {
+        STATE.messages = msgs.map((m, i)=>({
+          id: i + 1,
+          role: m.role === 'ai' ? 'ai' : 'user',
+          text: m.content || '',
+          type: m.message_type || 'plain',
+          time: new Date(m.created_at).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }),
+        }));
+      }
+    }
+    return true;
+  } catch (e) {
+    console.warn('Supabase load failed:', e);
+    return false;
+  } finally {
+    SB.hydrating = false;
+  }
+}
+
+async function syncToSupabase() {
+  if (!SB.ready || SB.hydrating) return;
+  const uid = SB.user.id;
+  const c = SB.client;
+  const projectRows = STATE.projects.map((p)=>({
+    user_id: uid, name: p.name, type: p.type, icon: p.icon, color: p.color,
+  }));
+  try {
+    SB.hydrating = true;
+    await c.from('tasks').delete().eq('user_id', uid);
+    await c.from('habit_logs').delete().eq('user_id', uid);
+    await c.from('habits').delete().eq('user_id', uid);
+    await c.from('finance_transactions').delete().eq('user_id', uid);
+    await c.from('scripts').delete().eq('user_id', uid);
+    await c.from('images').delete().eq('user_id', uid);
+    await c.from('chat_messages').delete().eq('user_id', uid);
+    await c.from('chat_threads').delete().eq('user_id', uid);
+    await c.from('projects').delete().eq('user_id', uid);
+
+    if (!projectRows.length) return;
+    const { data: insertedProjects, error: pErr } = await c
+      .from('projects')
+      .insert(projectRows)
+      .select('id,name');
+    if (pErr) throw pErr;
+    const pMap = new Map((insertedProjects || []).map((p)=>[p.name, p.id]));
+
+    if (STATE.tasks.length) {
+      await c.from('tasks').insert(STATE.tasks.map((t)=>({
+        user_id: uid,
+        project_id: pMap.get(t.project) || null,
+        title: t.title,
+        priority: t.prio || 'med',
+        status: t.status || (t.done ? 'done' : 'todo'),
+        done: !!t.done,
+        deadline: t.deadline || null,
+        source: 'manual',
+      })));
+    }
+    if (STATE.habits.length) {
+      await c.from('habits').insert(STATE.habits.map((h)=>({
+        user_id: uid,
+        project_id: pMap.get(STATE.currentProject?.name) || null,
+        name: h.name,
+        icon: h.icon || '✓',
+        streak: h.streak || 0,
+        today_done: !!h.today,
+      })));
+    }
+    if (STATE.finances.length) {
+      await c.from('finance_transactions').insert(STATE.finances.map((f)=>({
+        user_id: uid,
+        project_id: pMap.get(STATE.currentProject?.name) || null,
+        tx_type: f.type || 'expense',
+        amount: Number(f.amount || 0),
+        category: f.cat || null,
+        description: f.desc || null,
+        tx_date: toIsoDate(f.date),
+      })));
+    }
+    if (STATE.scripts.length) {
+      await c.from('scripts').insert(STATE.scripts.map((s)=>({
+        user_id: uid,
+        project_id: pMap.get(s.project) || null,
+        title: s.title,
+        body: s.text || '',
+        source: 'manual',
+      })));
+    }
+    if (STATE.images.length) {
+      await c.from('images').insert(STATE.images.map((img)=>({
+        user_id: uid,
+        project_id: pMap.get(img.project) || null,
+        prompt: img.prompt || '',
+        style: img.style || null,
+      })));
+    }
+    const { data: th } = await c.from('chat_threads').insert({
+      user_id: uid,
+      project_id: pMap.get(STATE.currentProject?.name) || null,
+      title: 'OpenClaw Chat',
+      mode: 'auto',
+    }).select('id').single();
+    if (th?.id && STATE.messages.length) {
+      await c.from('chat_messages').insert(STATE.messages.slice(-200).map((m)=>({
+        thread_id: th.id,
+        user_id: uid,
+        role: m.role === 'ai' ? 'ai' : 'user',
+        message_type: m.type || 'plain',
+        content: m.text || '',
+      })));
+    }
+  } catch (e) {
+    console.warn('Supabase sync failed:', e);
+  } finally {
+    SB.hydrating = false;
+  }
 }
 
 /* ══════════════════════════════════════
@@ -1361,14 +1630,16 @@ async function doLogin() {
   }
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').className = 'on';
-  init();
+  await init();
 }
 
 /* ══════════════════════════════════════
    INIT
 ══════════════════════════════════════ */
-function init() {
+async function init() {
   load();
+  await initSupabase();
+  await loadFromSupabase();
   seedIfEmpty();
   initAgents();
   renderDashboard();
