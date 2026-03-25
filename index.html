@@ -984,7 +984,7 @@ input[type=file] { display:none }
         <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--p),var(--pl));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff">OC</div>
         <div>
           <div style="font-size:13px;font-weight:700">AI Workspace</div>
-          <div style="font-size:10px;color:var(--t2)" id="chat-status-lbl">Формат: вывод → действия → auto-created tasks</div>
+          <div style="font-size:10px;color:var(--t2)" id="chat-status-lbl">AI pipeline: intake → intents → tasks/project (+confidence gate)</div>
         </div>
         <div class="chat-project-tag" id="chat-proj-tag">YouTube канал</div>
         <div style="margin-left:auto;display:flex;gap:7px">
@@ -1282,6 +1282,7 @@ input[type=file] { display:none }
 let STATE = {
   projects: [],
   tasks: [],
+  notes: [],
   habits: [],
   finances: [],
   scripts: [],
@@ -1294,6 +1295,10 @@ let STATE = {
   ui: {
     showSecondaryDashboard: false,
     projectAssetTab: 'scripts',
+  },
+  ai: {
+    confidenceThreshold: 0.72,
+    pendingConfirmation: null,
   },
 };
 
@@ -1353,6 +1358,7 @@ function save() {
     const d = {
       projects: STATE.projects,
       tasks: STATE.tasks,
+      notes: STATE.notes,
       habits: STATE.habits,
       finances: STATE.finances,
       scripts: STATE.scripts,
@@ -1370,6 +1376,7 @@ function load() {
     const d = JSON.parse(localStorage.getItem('oc_os_v2')||localStorage.getItem('oc_os_v1')||'{}');
     if(d.projects)  STATE.projects  = d.projects;
     if(d.tasks)     STATE.tasks     = d.tasks;
+    if(d.notes)     STATE.notes     = d.notes;
     if(d.habits)    STATE.habits    = d.habits;
     if(d.finances)  STATE.finances  = d.finances;
     if(d.scripts)   STATE.scripts   = d.scripts;
@@ -2116,9 +2123,117 @@ function addTask() {
   toast('Задача добавлена','s');
 }
 function addTaskFromAI(d) {
-  STATE.tasks.unshift({id:Date.now(),title:d.title||'AI задача',project:STATE.currentProject?.name||'Личные',prio:'med',deadline:'',done:false,status:'todo'});
+  STATE.tasks.unshift({
+    id:Date.now(),
+    title:d.title||'AI задача',
+    project:d.project || STATE.currentProject?.name || 'Личные',
+    prio:'med',
+    deadline:'',
+    done:false,
+    status:'todo',
+    source:'ai',
+    sourceRef:d.sourceRef || null,
+  });
   save(); renderTasks(); renderDashboard(); renderActionQueue(); renderProjectHQ(); updateBadges();
   toast('AI добавил задачу: '+d.title,'s');
+}
+function createTraceArtifact(kind, payload = {}) {
+  const project = payload.project || STATE.currentProject?.name || 'Личные задачи';
+  const source = payload.source || {};
+  const base = {
+    id: Date.now() + Math.random(),
+    project,
+    created: tstamp(),
+    source,
+  };
+  if (kind === 'task') {
+    const task = {
+      ...base,
+      title: payload.title || 'AI задача',
+      prio: payload.prio || 'med',
+      deadline: payload.deadline || '',
+      done: false,
+      status: payload.status || 'todo',
+    };
+    STATE.tasks.unshift(task);
+    return task;
+  }
+  if (kind === 'script') {
+    const script = {
+      ...base,
+      title: payload.title || 'AI сценарий',
+      text: payload.text || '',
+    };
+    STATE.scripts.unshift(script);
+    return script;
+  }
+  const note = {
+    ...base,
+    text: payload.text || '',
+    title: payload.title || 'AI note',
+  };
+  STATE.notes.unshift(note);
+  return note;
+}
+function resolveProjectFromText(text='') {
+  const lowered = text.toLowerCase();
+  return STATE.projects.find((p)=>lowered.includes((p.name||'').toLowerCase())) || STATE.currentProject || STATE.projects[0] || null;
+}
+function extractIntents(text='') {
+  const t = text.toLowerCase();
+  const intents = [];
+  if (/сценари|shorts|видео|script/.test(t)) intents.push({ type: 'create_script', confidence: 0.86 });
+  if (/задач|добав|todo|сделай|создай задачу/.test(t)) intents.push({ type: 'create_task', confidence: 0.84 });
+  if (/обнови|обновить|заверши|done|закрой/.test(t)) intents.push({ type: 'update_task', confidence: 0.67 });
+  if (/идея|заметк|note|зафиксируй|напомни/.test(t)) intents.push({ type: 'create_note', confidence: 0.82 });
+  if (!intents.length) intents.push({ type: 'create_note', confidence: 0.55 });
+  return intents;
+}
+function findTaskForUpdate(text='') {
+  const words = text.toLowerCase().split(/\s+/).filter((w)=>w.length>3);
+  return STATE.tasks.find((task)=>task.project===STATE.currentProject?.name && words.some((w)=>task.title.toLowerCase().includes(w)));
+}
+function applyIntents(intents=[], rawText='', sourceRef='') {
+  const project = resolveProjectFromText(rawText);
+  const artifacts = [];
+  intents.forEach((intent) => {
+    if (intent.type === 'create_task') {
+      artifacts.push(createTraceArtifact('task', {
+        project: project?.name,
+        title: rawText.replace(/^добавь|^добавить|^создай/i, '').trim() || 'Новая задача из AI',
+        source: { kind: 'chat_message', ref: sourceRef, rawText, intent: intent.type, confidence: intent.confidence },
+      }));
+    } else if (intent.type === 'create_script') {
+      artifacts.push(createTraceArtifact('script', {
+        project: project?.name,
+        title: `Сценарий: ${rawText.slice(0, 48) || 'без названия'}`,
+        text: `Черновик по запросу: ${rawText}`,
+        source: { kind: 'chat_message', ref: sourceRef, rawText, intent: intent.type, confidence: intent.confidence },
+      }));
+    } else if (intent.type === 'update_task') {
+      const target = findTaskForUpdate(rawText);
+      if (target) {
+        target.status = /заверши|done|закрой/.test(rawText.toLowerCase()) ? 'done' : 'inprogress';
+        target.done = target.status === 'done';
+        target.source = 'ai-update';
+        target.sourceRef = sourceRef;
+        artifacts.push(createTraceArtifact('note', {
+          project: target.project,
+          title: `Обновление задачи: ${target.title}`,
+          text: `AI обновил статус задачи на "${target.status}"`,
+          source: { kind: 'task_update', ref: sourceRef, taskId: target.id, rawText, intent: intent.type, confidence: intent.confidence },
+        }));
+      }
+    } else {
+      artifacts.push(createTraceArtifact('note', {
+        project: project?.name,
+        title: `AI заметка: ${rawText.slice(0, 36) || 'без темы'}`,
+        text: rawText,
+        source: { kind: 'chat_message', ref: sourceRef, rawText, intent: intent.type, confidence: intent.confidence },
+      }));
+    }
+  });
+  return { project, artifacts };
 }
 function toggleTask(id) {
   const t = STATE.tasks.find(x=>x.id===id); if(!t) return;
@@ -2239,7 +2354,7 @@ function addAIMsg(text, type='plain') {
       ${getAIActions(normalized,type)}
     </div>`;
   el.appendChild(div); scrollChat();
-  autoCreateTasksFromAI(normalized);
+  autoCreateTasksFromAI(normalized, msg.id);
 }
 function getAIActions(text,type) {
   const actions=[];
@@ -2287,6 +2402,25 @@ async function sendChatMsg(){
   const img=STATE.attachedFile; STATE.attachedFile=null;
   inp.value=''; inp.style.height='auto';
   addUserMsg(text,img);
+  if (STATE.ai.pendingConfirmation) {
+    const yes = /^(да|ок|подтверждаю|yes|y)$/i.test(text);
+    const no = /^(нет|отмена|no|n)$/i.test(text);
+    const pending = STATE.ai.pendingConfirmation;
+    if (yes) {
+      applyIntents(pending.intents, pending.rawText, pending.sourceRef);
+      save(); renderTasks(); renderDashboard(); renderActionQueue(); renderProjectHQ(); renderScripts(); updateBadges();
+      addAIMsg(buildAIResponse('Подтверждение получено. Действия выполнены и артефакты сохранены с источником.', ['Проверь созданные артефакты в проекте', 'При необходимости скорректируй приоритет'], []), 'task');
+      STATE.ai.pendingConfirmation = null;
+      save();
+      return;
+    }
+    if (no) {
+      addAIMsg(buildAIResponse('Отменил применение действий. Ничего не менял.', ['Уточни формулировку и повтори запрос'], []), 'note');
+      STATE.ai.pendingConfirmation = null;
+      save();
+      return;
+    }
+  }
   // try WS
   if(!sendToWS(text)) {
     document.getElementById('chat-status-lbl').textContent='Локальный режим (WS недоступен)';
@@ -2297,13 +2431,20 @@ async function sendChatMsg(){
     const reply=generateReply(text,img);
     addAIMsg(reply,classifyMsg(text));
     document.getElementById('chat-status-lbl').textContent='Готов к работе';
-    // Auto-save
-    if(/сценари|shorts|видео/i.test(text)) {
-      STATE.scripts.unshift({id:Date.now(),title:text.slice(0,50),project:STATE.currentProject?.name||'YouTube канал',text:reply,created:tstamp()});
-      save(); renderScripts(); updateBadges();
-    }
-    if(/задач|добав|нужно/i.test(text)) {
-      toast('AI предлагает создать задачу — нажми на кнопку в ответе','i');
+    const intents = extractIntents(text);
+    const lowConfidence = intents.some((intent)=>intent.confidence < STATE.ai.confidenceThreshold);
+    const sourceRef = `msg:${STATE.messages[STATE.messages.length-1]?.id || Date.now()}`;
+    if (lowConfidence) {
+      STATE.ai.pendingConfirmation = { intents, rawText: text, sourceRef };
+      addAIMsg(buildAIResponse(
+        `Уверенность ниже порога (${Math.round(STATE.ai.confidenceThreshold*100)}%). Подтверди выполнение: "да" / "нет".`,
+        ['Подтвердить и применить intents', 'Отклонить и переформулировать запрос'],
+        []
+      ), 'note');
+      toast('Нужна валидация: низкая уверенность AI', 'i');
+    } else {
+      applyIntents(intents, text, sourceRef);
+      save(); renderTasks(); renderDashboard(); renderActionQueue(); renderProjectHQ(); renderScripts(); updateBadges();
     }
   }
   save();
@@ -2342,7 +2483,12 @@ function addTaskFromText(text){
   toast('Задача добавлена','s');
 }
 function saveScriptFromChat(text){
-  STATE.scripts.unshift({id:Date.now(),title:text.slice(0,50),project:STATE.currentProject?.name||'YouTube канал',text,created:tstamp()});
+  createTraceArtifact('script', {
+    project: STATE.currentProject?.name || 'YouTube канал',
+    title: text.slice(0,50),
+    text,
+    source: { kind: 'manual_from_chat', ref: `msg:${STATE.messages[STATE.messages.length-1]?.id || ''}` },
+  });
   save(); renderScripts(); updateBadges();
   toast('Сценарий сохранён','s');
 }
@@ -2415,7 +2561,15 @@ function saveScript(id){
 }
 function deleteScript(id){STATE.scripts=STATE.scripts.filter(s=>s.id!==id);save();renderScripts();updateBadges();document.getElementById('script-editor').innerHTML=`<div style="text-align:center;padding:60px;color:var(--t3)"><div style="font-size:36px;margin-bottom:10px">≡</div><div>Выберите сценарий</div></div>`;}
 function exportScript(id){const sc=STATE.scripts.find(s=>s.id===id);if(!sc) return;const a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(sc.text);a.download='script.txt';a.click();}
-function addScriptFromAI(d){STATE.scripts.unshift({id:Date.now(),title:d.title||'AI сценарий',project:STATE.currentProject?.name||'YouTube канал',text:d.content||'',created:tstamp()});save();renderScripts();updateBadges();}
+function addScriptFromAI(d){
+  createTraceArtifact('script', {
+    project: d.project || STATE.currentProject?.name || 'YouTube канал',
+    title: d.title || 'AI сценарий',
+    text: d.content || '',
+    source: { kind: 'ws_ai', ref: 'websocket', payload: d },
+  });
+  save();renderScripts();updateBadges();
+}
 function createScript(){
   const project = STATE.currentProject?.name;
   if(!project) return;
@@ -2713,14 +2867,18 @@ function ensureAIFormat(text='') {
   if(/Вывод:\\s*[\\s\\S]*Предложенные действия:\\s*[\\s\\S]*Auto-created tasks:/i.test(text)) return text;
   return buildAIResponse(text, ['Уточнить и подтвердить следующий шаг'], ['Добавить задачу из ответа AI']);
 }
-function autoCreateTasksFromAI(text='') {
+function autoCreateTasksFromAI(text='', sourceMessageId='') {
   const block = text.split('Auto-created tasks:')[1];
   if(!block) return;
   const lines = block.split('\n').map((l)=>l.replace(/^- \[ \]\s*/, '').replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
   lines.forEach((line)=>{
     if(/нет автозадач/i.test(line)) return;
     const exists = STATE.tasks.some((t)=>t.title===line && t.project===STATE.currentProject?.name && !t.done);
-    if(!exists) STATE.tasks.unshift({id:Date.now()+Math.random(),title:line,project:STATE.currentProject?.name||'Личные',prio:'med',deadline:'',done:false,status:'todo'});
+    if(!exists) createTraceArtifact('task', {
+      project: STATE.currentProject?.name || 'Личные',
+      title: line,
+      source: { kind: 'ai_suggestion', ref: `aimsg:${sourceMessageId}`, rawText: text },
+    });
   });
   save(); renderTasks(); renderDashboard(); renderActionQueue(); renderProjectHQ(); updateBadges();
 }
