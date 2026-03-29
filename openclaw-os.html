@@ -1,0 +1,2281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   DESIGN SYSTEM — Obsidian Luxury
+═══════════════════════════════════════ */
+:root {
+  --bg:        #080808;
+  --bg1:       #0f0f0f;
+  --bg2:       #141414;
+  --bg3:       #1a1a1a;
+  --border:    rgba(255,255,255,0.06);
+  --borderH:   rgba(255,255,255,0.12);
+  --glass:     rgba(255,255,255,0.025);
+  --glassH:    rgba(255,255,255,0.05);
+
+  --p:         #7C5CFF;
+  --pl:        #9B80FF;
+  --pd:        rgba(124,92,255,0.12);
+  --pg:        rgba(124,92,255,0.3);
+
+  --green:     #2ECC71;
+  --gd:        rgba(46,204,113,0.1);
+  --orange:    #F39C12;
+  --od:        rgba(243,156,18,0.1);
+  --red:       #E74C3C;
+  --rd:        rgba(231,76,60,0.1);
+  --blue:      #3498DB;
+  --bd:        rgba(52,152,219,0.1);
+  --cyan:      #1ABC9C;
+  --cd:        rgba(26,188,156,0.1);
+  --pink:      #E91E8C;
+  --pkd:       rgba(233,30,140,0.1);
+
+  --t1: #F0F0F0;
+  --t2: #707070;
+  --t3: #3A3A3A;
+
+  --font: 'Geist', system-ui, sans-serif;
+  --mono: 'Geist Mono', monospace;
+
+  --sw: 224px;
+  --topH: 48px;
+  --r:  10px;
+  --rs: 6px;
+  --rl: 14px;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box }
+html { color-scheme:dark; height:100% }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--t1);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ambient */
+#ambient {
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 800px 500px at 20% -10%, rgba(124,92,255,0.055) 0%, transparent 65%),
+    radial-gradient(ellipse 600px 500px at 80% 110%, rgba(26,188,156,0.03) 0%, transparent 65%);
+}
+
+/* Scrollbars */
+* { scrollbar-width:thin; scrollbar-color:var(--bg3) transparent }
+::-webkit-scrollbar { width:3px; height:3px }
+::-webkit-scrollbar-thumb { background:var(--bg3); border-radius:2px }
+
+/* ═══════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════ */
+#login-screen {
+  position:fixed; inset:0; z-index:1000;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--bg);
+}
+.login-wrap {
+  width:340px;
+  animation: fadeUp .5s cubic-bezier(.22,1,.36,1);
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+.login-logo {
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:36px; justify-content:center;
+}
+.logo-mark {
+  width:38px; height:38px; border-radius:10px;
+  background:linear-gradient(135deg, var(--p), var(--pl));
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 28px var(--pg);
+  font-size:16px; font-weight:800; color:#fff; letter-spacing:-.5px;
+}
+.logo-text { font-size:22px; font-weight:800; letter-spacing:-.5px }
+.logo-text em { color:var(--p); font-style:normal }
+.logo-ver { font-size:10px; font-family:var(--mono); color:var(--t3); background:var(--bg2); padding:2px 6px; border-radius:4px }
+
+.login-card {
+  background:var(--bg1); border:1px solid var(--border);
+  border-radius:var(--rl); padding:32px;
+  box-shadow:0 40px 80px rgba(0,0,0,.5);
+}
+.login-label { font-size:10px; font-weight:700; color:var(--t3); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px }
+.login-inp {
+  width:100%; padding:13px 16px;
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--rs); color:var(--t1);
+  font-family:var(--mono); font-size:20px; letter-spacing:10px; text-align:center;
+  outline:none; margin-bottom:14px;
+  transition:border-color .2s, box-shadow .2s;
+}
+.login-inp:focus { border-color:var(--p); box-shadow:0 0 0 3px var(--pd) }
+.login-btn {
+  width:100%; padding:13px;
+  background:var(--p); border:none; border-radius:var(--rs);
+  color:#fff; font-family:var(--font); font-size:14px; font-weight:700;
+  cursor:pointer; transition:all .15s;
+  box-shadow:0 4px 20px var(--pg);
+}
+.login-btn:hover { opacity:.88; transform:translateY(-1px) }
+.login-err { text-align:center; font-size:11px; color:var(--red); margin-top:10px; min-height:16px }
+.login-hint { text-align:center; font-size:11px; color:var(--t3); margin-top:14px }
+
+/* ═══════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════ */
+#app { display:none; height:100vh; position:relative; z-index:1 }
+#app.on { display:flex }
+
+/* ═══════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════ */
+.sidebar {
+  width:var(--sw); flex-shrink:0;
+  background:var(--bg1); border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  z-index:100; position:relative;
+}
+.sidebar-top {
+  padding:14px 12px 10px;
+  border-bottom:1px solid var(--border);
+}
+.sb-logo { display:flex; align-items:center; gap:8px }
+.sb-logo-mark {
+  width:26px; height:26px; border-radius:7px;
+  background:linear-gradient(135deg, var(--p), var(--pl));
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:800; color:#fff; flex-shrink:0;
+  box-shadow:0 0 10px var(--pg);
+}
+.sb-logo-name { font-size:14px; font-weight:800; letter-spacing:-.3px }
+.sb-logo-name em { color:var(--p); font-style:normal }
+.sb-ver { margin-left:auto; font-size:9px; font-family:var(--mono); color:var(--t3); background:var(--bg2); padding:1px 5px; border-radius:3px }
+
+/* WS */
+.ws-indicator {
+  display:flex; align-items:center; gap:6px;
+  margin-top:10px; padding:6px 8px;
+  background:var(--glass); border:1px solid var(--border);
+  border-radius:var(--rs); font-size:10px; color:var(--t2); font-family:var(--mono);
+  cursor:pointer; transition:border-color .2s;
+}
+.ws-indicator:hover { border-color:var(--borderH) }
+.ws-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; transition:background .3s }
+.ws-on { background:var(--green); box-shadow:0 0 6px var(--green) }
+.ws-off { background:var(--t3) }
+.ws-connecting { background:var(--orange); animation:pulse .8s infinite }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* Project switcher */
+.project-area {
+  padding:10px 12px;
+  border-bottom:1px solid var(--border);
+}
+.project-label { font-size:9px; font-weight:700; color:var(--t3); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px }
+.active-project {
+  display:flex; align-items:center; gap:8px;
+  padding:7px 9px; border-radius:var(--rs);
+  background:var(--glass); border:1px solid var(--border);
+  cursor:pointer; transition:border-color .15s;
+}
+.active-project:hover { border-color:var(--borderH) }
+.proj-ic { width:20px; height:20px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:10px; flex-shrink:0 }
+.proj-name { font-size:12px; font-weight:600; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.proj-arrow { color:var(--t3); font-size:10px; flex-shrink:0 }
+
+/* Nav */
+.sidebar-nav { flex:1; overflow-y:auto; padding:8px 8px }
+.nav-group { margin-bottom:2px }
+.nav-label { font-size:9px; font-weight:700; color:var(--t3); text-transform:uppercase; letter-spacing:1px; padding:10px 8px 4px }
+.nav-item {
+  display:flex; align-items:center; gap:8px;
+  padding:7px 9px; border-radius:var(--rs);
+  cursor:pointer; font-size:12px; font-weight:500; color:var(--t2);
+  transition:all .12s; user-select:none; position:relative;
+}
+.nav-item:hover { background:var(--glass); color:var(--t1) }
+.nav-item.active {
+  background:var(--pd); color:var(--t1);
+}
+.nav-item.active::before {
+  content:''; position:absolute; left:0; top:22%;
+  width:2px; height:56%; background:var(--p); border-radius:0 2px 2px 0;
+}
+.nav-icon { width:15px; text-align:center; flex-shrink:0; font-size:13px; opacity:.7 }
+.nav-item.active .nav-icon { opacity:1 }
+.nav-badge {
+  margin-left:auto; font-size:9px; font-family:var(--mono); font-weight:700;
+  padding:1px 5px; border-radius:10px;
+}
+.nb-p { background:var(--pd); color:var(--pl) }
+.nb-g { background:var(--gd); color:var(--green) }
+.nb-o { background:var(--od); color:var(--orange) }
+
+/* Sidebar bottom */
+.sidebar-foot {
+  border-top:1px solid var(--border); padding:10px 8px;
+}
+.user-card {
+  display:flex; align-items:center; gap:8px;
+  padding:7px 9px; border-radius:var(--rs);
+  background:var(--glass); cursor:pointer; transition:background .15s;
+}
+.user-card:hover { background:var(--glassH) }
+.user-av {
+  width:26px; height:26px; border-radius:7px;
+  background:linear-gradient(135deg,var(--p),var(--pink));
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:800; color:#fff; flex-shrink:0;
+}
+.user-name { font-size:12px; font-weight:600; flex:1 }
+.user-status { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--green) }
+.u-dot { width:4px; height:4px; border-radius:50%; background:var(--green) }
+.cmd-k { font-size:9px; font-family:var(--mono); color:var(--t3); background:var(--bg2); border:1px solid var(--border); padding:2px 5px; border-radius:3px; cursor:pointer; transition:color .15s }
+.cmd-k:hover { color:var(--t1) }
+
+/* burger */
+.burger {
+  display:none; position:fixed; top:10px; left:10px; z-index:200;
+  width:34px; height:34px; border-radius:var(--rs);
+  background:var(--bg1); border:1px solid var(--border);
+  align-items:center; justify-content:center; cursor:pointer; color:var(--t1); font-size:14px;
+}
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:99; backdrop-filter:blur(4px) }
+
+/* ═══════════════════════════════════════
+   MAIN AREA
+═══════════════════════════════════════ */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0 }
+
+.topbar {
+  height:var(--topH); flex-shrink:0;
+  display:flex; align-items:center; gap:12px;
+  padding:0 22px;
+  border-bottom:1px solid var(--border);
+  background:rgba(8,8,8,.8); backdrop-filter:blur(20px);
+}
+.tb-title { font-size:14px; font-weight:700; letter-spacing:-.2px }
+.tb-sub { font-size:11px; color:var(--t2); margin-left:8px }
+.tb-actions { margin-left:auto; display:flex; gap:7px; align-items:center }
+
+.workspace { flex:1; overflow:hidden; display:flex }
+.panel { display:none; flex-direction:column; width:100%; overflow:hidden; animation:panIn .18s ease }
+.panel.on { display:flex }
+@keyframes panIn { from{opacity:0;transform:translateX(5px)} to{opacity:1;transform:translateX(0)} }
+.scroll-body { flex:1; overflow-y:auto; padding:24px }
+
+/* ═══════════════════════════════════════
+   COMPONENTS
+═══════════════════════════════════════ */
+
+/* Buttons */
+.btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:7px 14px; border-radius:var(--rs);
+  font-family:var(--font); font-size:12px; font-weight:600;
+  cursor:pointer; border:none; transition:all .14s; white-space:nowrap;
+}
+.btn:active { transform:scale(.97) }
+.btn-primary { background:var(--p); color:#fff; box-shadow:0 2px 14px var(--pg) }
+.btn-primary:hover { opacity:.88; transform:translateY(-1px) }
+.btn-ghost { background:var(--glass); border:1px solid var(--border); color:var(--t2) }
+.btn-ghost:hover { background:var(--glassH); color:var(--t1); border-color:var(--borderH) }
+.btn-success { background:var(--gd); border:1px solid rgba(46,204,113,.2); color:var(--green) }
+.btn-danger { background:var(--rd); border:1px solid rgba(231,76,60,.2); color:var(--red) }
+.btn-sm { padding:5px 11px; font-size:11px }
+.btn-xs { padding:3px 8px; font-size:10px }
+.btn-ico { width:30px; height:30px; padding:0; justify-content:center; border-radius:var(--rs) }
+
+/* Cards */
+.card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r); transition:border-color .2s }
+.card:hover { border-color:var(--borderH) }
+.card-p { padding:18px }
+
+/* Pills */
+.pill {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:2px 8px; border-radius:20px;
+  font-size:9px; font-weight:700; font-family:var(--mono); letter-spacing:.3px;
+}
+.pill::before { content:''; width:4px; height:4px; border-radius:50% }
+.pill-idle { background:var(--glass); color:var(--t2) }.pill-idle::before { background:var(--t2) }
+.pill-run { background:var(--pd); color:var(--pl) }.pill-run::before { background:var(--p); animation:pulse 1.2s infinite }
+.pill-done { background:var(--gd); color:var(--green) }.pill-done::before { background:var(--green) }
+.pill-busy { background:var(--od); color:var(--orange) }.pill-busy::before { background:var(--orange) }
+.pill-idea { background:var(--pd); color:var(--pl) }
+.pill-task { background:var(--od); color:var(--orange) }
+.pill-script { background:var(--gd); color:var(--green) }
+.pill-note { background:var(--cd); color:var(--cyan) }
+
+/* Fields */
+.field { display:flex; flex-direction:column; gap:5px; margin-bottom:12px }
+.flbl { font-size:9px; font-weight:700; color:var(--t3); letter-spacing:.8px; text-transform:uppercase }
+.finp {
+  width:100%; padding:9px 12px;
+  background:var(--glass); border:1px solid var(--border);
+  border-radius:var(--rs); color:var(--t1); font-family:var(--font); font-size:12px; outline:none;
+  transition:border-color .2s, box-shadow .2s;
+}
+.finp:focus { border-color:var(--p); box-shadow:0 0 0 2px var(--pd) }
+.finp::placeholder { color:var(--t3) }
+textarea.finp { resize:none; line-height:1.6 }
+select.finp { cursor:pointer }
+
+/* Stat cards */
+.stat { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r); padding:18px 20px }
+.stat-lbl { font-size:10px; font-weight:700; color:var(--t2); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px }
+.stat-val { font-size:28px; font-weight:800; letter-spacing:-1px; line-height:1 }
+.stat-delta { font-size:11px; margin-top:5px }
+.up { color:var(--green) }.dn { color:var(--red) }.ne { color:var(--t2) }
+
+/* Skeleton */
+.sk { background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%); background-size:200% 100%; animation:skWave 1.5s infinite; border-radius:var(--rs) }
+@keyframes skWave { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* Grids */
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:14px }
+.g3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px }
+.g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:12px }
+.ga { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px }
+.ga2 { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px }
+
+/* Section */
+.sec { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px }
+.sec-title { font-size:12px; font-weight:700; color:var(--t2); text-transform:uppercase; letter-spacing:.7px }
+.divider { height:1px; background:var(--border); margin:20px 0 }
+
+/* Progress */
+.progress { height:2px; background:var(--border); border-radius:2px; overflow:hidden }
+.progress-bar { height:100%; border-radius:2px; transition:width .5s ease }
+
+/* Toggle */
+.toggle { width:34px; height:19px; border-radius:10px; background:var(--border); border:none; cursor:pointer; position:relative; transition:background .2s; flex-shrink:0 }
+.toggle::after { content:''; position:absolute; top:3px; left:3px; width:13px; height:13px; border-radius:50%; background:#fff; transition:transform .2s }
+.toggle.on { background:var(--green) }
+.toggle.on::after { transform:translateX(15px) }
+
+/* ═══════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════ */
+.dash-hero {
+  background:linear-gradient(135deg,rgba(124,92,255,.08),rgba(26,188,156,.04));
+  border:1px solid rgba(124,92,255,.15); border-radius:var(--r);
+  padding:22px; margin-bottom:20px; position:relative; overflow:hidden;
+}
+.dash-hero::before { content:''; position:absolute; right:-20px; top:-30px; font-size:160px; color:rgba(124,92,255,.03); line-height:1; pointer-events:none; font-weight:800; content:'OS' }
+.dash-greeting { font-size:22px; font-weight:800; letter-spacing:-.5px; margin-bottom:4px }
+.dash-subtitle { font-size:12px; color:var(--t2) }
+.quick-actions { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap }
+
+.task-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--rs); margin-bottom:6px; transition:border-color .15s; cursor:pointer;
+}
+.task-item:hover { border-color:var(--borderH) }
+.task-check {
+  width:16px; height:16px; border-radius:4px; border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  cursor:pointer; transition:all .15s; font-size:9px;
+}
+.task-check.done { background:var(--green); border-color:var(--green); color:#fff }
+.task-title { flex:1; font-size:12px; transition:color .15s }
+.task-check.done ~ .task-title { color:var(--t3); text-decoration:line-through }
+.task-deadline { font-size:10px; color:var(--t3); font-family:var(--mono) }
+.task-prio { width:3px; height:24px; border-radius:2px; flex-shrink:0 }
+.prio-high { background:var(--red) }
+.prio-med { background:var(--orange) }
+.prio-low { background:var(--green) }
+
+.habit-item {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--rs); margin-bottom:6px;
+}
+.habit-name { flex:1; font-size:12px }
+.habit-streak { font-size:10px; font-family:var(--mono); color:var(--orange) }
+.habit-dots { display:flex; gap:3px }
+.h-dot { width:8px; height:8px; border-radius:2px }
+.h-done { background:var(--green) }
+.h-miss { background:var(--bg3) }
+
+/* Finance */
+.fin-bar { display:flex; height:6px; border-radius:3px; overflow:hidden; margin:8px 0 }
+.fin-income { background:var(--green) }
+.fin-expense { background:var(--red); opacity:.7 }
+
+/* ═══════════════════════════════════════
+   CHAT
+═══════════════════════════════════════ */
+.chat-container { flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative }
+
+.chat-header {
+  display:flex; align-items:center; gap:10px;
+  padding:12px 20px; border-bottom:1px solid var(--border);
+  flex-shrink:0; background:var(--bg1);
+}
+.chat-project-tag {
+  padding:3px 10px; border-radius:20px;
+  font-size:10px; font-weight:700;
+  background:var(--pd); color:var(--pl);
+}
+
+.chat-messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:14px }
+
+.msg { display:flex; gap:9px; max-width:680px; animation:msgIn .2s ease }
+@keyframes msgIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+.msg.user { margin-left:auto; flex-direction:row-reverse }
+.msg-av {
+  width:26px; height:26px; border-radius:7px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;
+}
+.msg.ai .msg-av { background:linear-gradient(135deg,var(--p),var(--pl)); color:#fff }
+.msg.user .msg-av { background:var(--bg3); color:var(--t2) }
+.msg-content { display:flex; flex-direction:column; gap:4px }
+.msg-bubble {
+  padding:10px 14px; border-radius:var(--r); font-size:13px; line-height:1.65;
+}
+.msg.ai .msg-bubble { background:var(--bg2); border:1px solid var(--border); border-top-left-radius:3px }
+.msg.user .msg-bubble { background:var(--pd); border:1px solid rgba(124,92,255,.2); border-top-right-radius:3px }
+.msg-meta { display:flex; align-items:center; gap:6px; font-size:10px; color:var(--t3); font-family:var(--mono) }
+.msg-type-tag {
+  padding:2px 7px; border-radius:10px; font-size:9px; font-weight:700;
+  background:var(--pd); color:var(--pl); cursor:pointer; transition:opacity .15s;
+}
+.msg-type-tag:hover { opacity:.7 }
+
+/* AI actions */
+.ai-actions {
+  display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;
+}
+.ai-action {
+  padding:4px 10px; border-radius:20px;
+  background:var(--glass); border:1px solid var(--border);
+  font-size:10px; color:var(--t2); cursor:pointer; transition:all .14s;
+}
+.ai-action:hover { background:var(--pd); color:var(--pl); border-color:rgba(124,92,255,.3) }
+
+/* Typing */
+.typing { display:flex; gap:4px; align-items:center; padding:10px 14px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--r); border-top-left-radius:3px; width:58px }
+.typing span { width:5px; height:5px; border-radius:50%; background:var(--t3); animation:td 1.4s infinite }
+.typing span:nth-child(2) { animation-delay:.2s }
+.typing span:nth-child(3) { animation-delay:.4s }
+@keyframes td { 0%,80%,100%{transform:scale(.6);opacity:.3} 40%{transform:scale(1);opacity:1} }
+
+/* Chips */
+.chat-chips { padding:6px 20px 0; display:flex; gap:6px; flex-wrap:wrap }
+.chip {
+  padding:4px 11px; border-radius:20px;
+  background:var(--glass); border:1px solid var(--border);
+  font-size:11px; color:var(--t2); cursor:pointer; transition:all .14s; white-space:nowrap;
+}
+.chip:hover { background:var(--glassH); color:var(--t1); border-color:var(--borderH) }
+
+/* Mode selector */
+.mode-row { padding:8px 20px; display:flex; align-items:center; gap:8px }
+.mode-select {
+  padding:4px 10px; border-radius:20px;
+  background:var(--glass); border:1px solid var(--border);
+  color:var(--t2); font-family:var(--font); font-size:11px; font-weight:600;
+  cursor:pointer; outline:none; transition:all .14s;
+}
+.mode-select:focus { border-color:var(--p) }
+.mode-label { font-size:10px; color:var(--t3); font-weight:700 }
+
+/* Input */
+.chat-input-area {
+  padding:12px 16px 14px; border-top:1px solid var(--border);
+  background:var(--bg1);
+}
+.chat-input-box {
+  display:flex; align-items:flex-end; gap:9px;
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--r); padding:9px 12px;
+  transition:border-color .2s, box-shadow .2s;
+}
+.chat-input-box:focus-within { border-color:var(--p); box-shadow:0 0 0 2px var(--pd) }
+.chat-textarea {
+  flex:1; background:transparent; border:none; outline:none;
+  color:var(--t1); font-family:var(--font); font-size:13px;
+  line-height:1.5; resize:none; max-height:100px; min-height:20px;
+}
+.chat-textarea::placeholder { color:var(--t3) }
+.chat-btns { display:flex; align-items:center; gap:5px; flex-shrink:0 }
+.chat-tool { width:28px; height:28px; border-radius:var(--rs); background:transparent; border:none; cursor:pointer; color:var(--t2); display:flex; align-items:center; justify-content:center; font-size:13px; transition:all .14s }
+.chat-tool:hover { background:var(--glass); color:var(--t1) }
+.chat-send {
+  width:30px; height:30px; border-radius:var(--rs); background:var(--p); border:none;
+  cursor:pointer; color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:13px; transition:all .14s; box-shadow:0 2px 10px var(--pg);
+}
+.chat-send:hover { opacity:.85; transform:scale(1.05) }
+
+/* Drop overlay */
+.drop-ov {
+  position:absolute; inset:10px; border:2px dashed var(--p);
+  border-radius:var(--r); background:rgba(124,92,255,.06);
+  display:none; align-items:center; justify-content:center;
+  flex-direction:column; gap:8px; z-index:10; backdrop-filter:blur(2px);
+  font-size:14px; color:var(--pl);
+}
+.drop-ov.show { display:flex }
+
+/* ═══════════════════════════════════════
+   PROJECTS PANEL
+═══════════════════════════════════════ */
+.proj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px }
+.proj-card {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--r); padding:18px; cursor:pointer;
+  transition:all .2s; position:relative; overflow:hidden;
+}
+.proj-card:hover { border-color:var(--borderH); transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,0,0,.3) }
+.proj-card-mark { width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; margin-bottom:12px }
+.proj-card-name { font-size:14px; font-weight:700; margin-bottom:3px }
+.proj-card-type { font-size:10px; color:var(--t2) }
+.proj-card-stats { display:flex; gap:12px; margin-top:12px; font-size:10px; color:var(--t2); font-family:var(--mono) }
+.proj-card-glow { position:absolute; bottom:-20px; right:-20px; width:80px; height:80px; border-radius:50%; opacity:.05; pointer-events:none }
+.proj-card-foot { display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid var(--border) }
+
+/* ═══════════════════════════════════════
+   AGENTS
+═══════════════════════════════════════ */
+.agent-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px }
+.agent-card {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--r); padding:18px; transition:all .2s;
+}
+.agent-card:hover { border-color:var(--borderH) }
+.agent-card.working { border-color:rgba(124,92,255,.3); background:rgba(124,92,255,.03) }
+.agent-head { display:flex; align-items:center; gap:10px; margin-bottom:12px }
+.agent-ic { width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0 }
+.agent-name { font-size:13px; font-weight:700 }
+.agent-type { font-size:10px; color:var(--t2) }
+.agent-task { font-size:11px; color:var(--t2); font-family:var(--mono); padding:8px 10px; background:var(--glass); border-radius:var(--rs); border:1px solid var(--border); margin-bottom:10px; min-height:36px }
+.agent-foot { display:flex; align-items:center; gap:8px }
+
+/* ═══════════════════════════════════════
+   TASKS
+═══════════════════════════════════════ */
+.task-columns { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; align-items:start }
+.task-col { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r); overflow:hidden }
+.task-col-hd {
+  padding:11px 14px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:8px;
+  font-size:11px; font-weight:700;
+}
+.task-col-body { padding:10px }
+.kanban-card {
+  background:var(--bg1); border:1px solid var(--border);
+  border-radius:var(--rs); padding:10px 12px; margin-bottom:7px;
+  cursor:pointer; transition:border-color .15s;
+}
+.kanban-card:hover { border-color:var(--borderH) }
+.kanban-title { font-size:12px; font-weight:500; margin-bottom:5px }
+.kanban-meta { display:flex; align-items:center; gap:6px; font-size:10px; color:var(--t3); font-family:var(--mono) }
+
+/* ═══════════════════════════════════════
+   FINANCES
+═══════════════════════════════════════ */
+.fin-entry {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--rs); margin-bottom:7px; transition:border-color .15s;
+}
+.fin-entry:hover { border-color:var(--borderH) }
+.fin-icon { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0 }
+.fin-desc { flex:1; font-size:12px }
+.fin-cat { font-size:10px; color:var(--t2); margin-top:1px }
+.fin-amount { font-size:13px; font-weight:700; font-family:var(--mono) }
+.fin-income-amt { color:var(--green) }
+.fin-expense-amt { color:var(--red) }
+
+/* ═══════════════════════════════════════
+   IMAGES
+═══════════════════════════════════════ */
+.img-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px }
+.img-card {
+  aspect-ratio:1; border-radius:var(--rs); overflow:hidden;
+  background:var(--bg2); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; position:relative; transition:border-color .2s;
+}
+.img-card:hover { border-color:var(--borderH) }
+.img-card-ov {
+  position:absolute; inset:0; background:rgba(0,0,0,.7);
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  opacity:0; transition:opacity .2s;
+}
+.img-card:hover .img-card-ov { opacity:1 }
+.img-ph { color:var(--t3); font-size:28px }
+
+/* ═══════════════════════════════════════
+   CMD PALETTE
+═══════════════════════════════════════ */
+#cmd-palette {
+  position:fixed; inset:0; z-index:9000;
+  display:none; align-items:flex-start; justify-content:center;
+  padding-top:13vh; background:rgba(0,0,0,.7); backdrop-filter:blur(8px);
+}
+#cmd-palette.open { display:flex }
+.cmd-box {
+  width:510px; background:var(--bg1); border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--rl); overflow:hidden;
+  box-shadow:0 40px 80px rgba(0,0,0,.7);
+  animation:cmdIn .15s cubic-bezier(.22,1,.36,1);
+}
+@keyframes cmdIn { from{opacity:0;transform:scale(.96) translateY(-8px)} to{opacity:1;transform:scale(1) translateY(0)} }
+.cmd-row { display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--border) }
+.cmd-icon-wrap { color:var(--t3) }
+.cmd-inp { flex:1; background:transparent; border:none; outline:none; color:var(--t1); font-family:var(--font); font-size:14px }
+.cmd-inp::placeholder { color:var(--t2) }
+.cmd-list { max-height:320px; overflow-y:auto; padding:5px }
+.cmd-section { padding:7px 12px 3px; font-size:9px; font-weight:700; color:var(--t3); text-transform:uppercase; letter-spacing:1px }
+.cmd-item {
+  display:flex; align-items:center; gap:9px;
+  padding:8px 11px; border-radius:var(--rs); cursor:pointer; font-size:12px; transition:all .1s;
+}
+.cmd-item:hover, .cmd-item.sel { background:var(--pd); color:var(--pl) }
+.cmd-item-ic { width:24px; height:24px; border-radius:5px; background:var(--glass); display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0 }
+.cmd-item-sub { font-size:10px; color:var(--t3) }
+.cmd-item.sel .cmd-item-sub { color:var(--pl); opacity:.6 }
+
+/* ═══════════════════════════════════════
+   TOASTS
+═══════════════════════════════════════ */
+#toasts { position:fixed; bottom:18px; right:18px; z-index:9999; display:flex; flex-direction:column; gap:6px; pointer-events:none }
+.toast {
+  display:flex; align-items:center; gap:9px;
+  padding:9px 13px; border-radius:var(--rs);
+  background:var(--bg1); border:1px solid var(--border);
+  font-size:12px; font-weight:500; min-width:190px;
+  box-shadow:0 8px 28px rgba(0,0,0,.5);
+  animation:toastIn .25s cubic-bezier(.22,1,.36,1); pointer-events:all;
+}
+@keyframes toastIn { from{opacity:0;transform:translateX(8px)} to{opacity:1;transform:translateX(0)} }
+.toast.s { border-color:rgba(46,204,113,.3) }
+.toast.e { border-color:rgba(231,76,60,.3) }
+.toast.i { border-color:rgba(124,92,255,.3) }
+.t-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0 }
+.toast.s .t-dot { background:var(--green) }
+.toast.e .t-dot { background:var(--red) }
+.toast.i .t-dot { background:var(--p) }
+.t-x { margin-left:auto; cursor:pointer; color:var(--t3); font-size:11px; transition:color .15s }
+.t-x:hover { color:var(--t1) }
+
+/* ═══════════════════════════════════════
+   MODAL
+═══════════════════════════════════════ */
+.modal-bg {
+  position:fixed; inset:0; z-index:800;
+  display:none; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.7); backdrop-filter:blur(8px);
+}
+.modal-bg.open { display:flex }
+.modal {
+  width:480px; background:var(--bg1); border:1px solid var(--border);
+  border-radius:var(--rl); padding:28px;
+  box-shadow:0 40px 80px rgba(0,0,0,.5);
+  animation:modalIn .2s cubic-bezier(.22,1,.36,1);
+}
+@keyframes modalIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
+.modal-title { font-size:16px; font-weight:800; margin-bottom:20px }
+.modal-foot { display:flex; gap:8px; justify-content:flex-end; margin-top:20px }
+
+/* ═══════════════════════════════════════
+   MOBILE
+═══════════════════════════════════════ */
+@media (max-width:768px) {
+  .sidebar { position:fixed; left:0; top:0; height:100%; transform:translateX(-100%); z-index:150 }
+  .sidebar.open { transform:translateX(0) }
+  .overlay.show { display:block }
+  .burger { display:flex }
+  .g2,.g3,.g4 { grid-template-columns:1fr }
+  .ga,.ga2 { grid-template-columns:1fr 1fr }
+  .task-columns { grid-template-columns:1fr }
+  .agent-grid { grid-template-columns:1fr }
+  .scroll-body { padding:16px }
+  .topbar { padding:0 14px }
+  .chat-messages { padding:14px }
+  .chat-chips { padding:4px 14px }
+}
+
+[hidden] { display:none !important }
+input[type=file] { display:none }
+</style>
+</head>
+<body>
+<div id="ambient"></div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-logo">
+      <div class="logo-mark">OC</div>
+      <div class="logo-text">Open<em>Claw</em></div>
+      <div class="logo-ver">OS v1</div>
+    </div>
+    <div class="login-card">
+      <div class="login-label">Код доступа</div>
+      <input class="login-inp" type="password" id="pin" maxlength="8" placeholder="••••••" autofocus
+        onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="login-btn" onclick="doLogin()">Войти</button>
+      <div class="login-err" id="login-err"></div>
+    </div>
+    <div class="login-hint">OpenClaw OS — личная AI-операционная система</div>
+  </div>
+</div>
+
+<!-- BURGER -->
+<button class="burger" id="burger" onclick="toggleSidebar()">☰</button>
+<div class="overlay" id="overlay" onclick="toggleSidebar(false)"></div>
+
+<!-- APP -->
+<div id="app">
+
+<!-- ══ SIDEBAR ══ -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-top">
+    <div class="sb-logo">
+      <div class="sb-logo-mark">OC</div>
+      <div class="sb-logo-name">Open<em>Claw</em></div>
+      <div class="sb-ver">OS</div>
+    </div>
+    <div class="ws-indicator" id="ws-bar" onclick="toggleWS()">
+      <div class="ws-dot ws-off" id="ws-dot"></div>
+      <span id="ws-lbl" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Нет подключения</span>
+    </div>
+  </div>
+
+  <div class="project-area">
+    <div class="project-label">Проект</div>
+    <div class="active-project" onclick="openModal('modal-projects')">
+      <div class="proj-ic" id="sb-proj-ic" style="background:rgba(124,92,255,.15)">🎬</div>
+      <div class="proj-name" id="sb-proj-name">YouTube канал</div>
+      <div class="proj-arrow">⌄</div>
+    </div>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-group">
+      <div class="nav-label">Обзор</div>
+      <div class="nav-item active" data-page="dashboard" onclick="goPage('dashboard',this)">
+        <span class="nav-icon">⬡</span>Dashboard
+      </div>
+      <div class="nav-item" data-page="projects" onclick="goPage('projects',this)">
+        <span class="nav-icon">◫</span>Проекты
+        <span class="nav-badge nb-p" id="proj-cnt">0</span>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Работа</div>
+      <div class="nav-item" data-page="chat" onclick="goPage('chat',this)">
+        <span class="nav-icon">◻</span>Чат с AI
+        <span class="nav-badge nb-p" id="chat-badge" hidden>0</span>
+      </div>
+      <div class="nav-item" data-page="tasks" onclick="goPage('tasks',this)">
+        <span class="nav-icon">☑</span>Задачи
+        <span class="nav-badge nb-o" id="task-badge">0</span>
+      </div>
+      <div class="nav-item" data-page="agents" onclick="goPage('agents',this)">
+        <span class="nav-icon">◈</span>Агенты
+        <span class="nav-badge nb-g" id="agent-badge">8</span>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Контент</div>
+      <div class="nav-item" data-page="youtube" onclick="goPage('youtube',this)">
+        <span class="nav-icon">▷</span>YouTube
+      </div>
+      <div class="nav-item" data-page="scripts" onclick="goPage('scripts',this)">
+        <span class="nav-icon">≡</span>Сценарии
+        <span class="nav-badge nb-p" id="script-badge">0</span>
+      </div>
+      <div class="nav-item" data-page="images" onclick="goPage('images',this)">
+        <span class="nav-icon">◎</span>Изображения
+      </div>
+      <div class="nav-item" data-page="music" onclick="goPage('music',this)">
+        <span class="nav-icon">♫</span>Музыка
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Жизнь</div>
+      <div class="nav-item" data-page="finances" onclick="goPage('finances',this)">
+        <span class="nav-icon">◈</span>Деньги
+      </div>
+      <div class="nav-item" data-page="habits" onclick="goPage('habits',this)">
+        <span class="nav-icon">↺</span>Привычки
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-foot">
+    <div class="user-card">
+      <div class="user-av">OP</div>
+      <div style="flex:1">
+        <div class="user-name">Operator</div>
+        <div class="user-status"><span class="u-dot"></span>Online</div>
+      </div>
+      <div class="cmd-k" onclick="openCmd()">⌘K</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+<div class="workspace">
+
+<!-- ════ DASHBOARD ════ -->
+<div class="panel on" id="page-dashboard">
+  <div class="topbar">
+    <div class="tb-title">Dashboard</div>
+    <span class="tb-sub" id="dash-date"></span>
+    <div class="tb-actions">
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-task')">+ Задача</button>
+    </div>
+  </div>
+  <div class="scroll-body">
+    <!-- Hero -->
+    <div class="dash-hero">
+      <div class="dash-greeting" id="dash-greeting">Добро пожаловать</div>
+      <div class="dash-subtitle">Сегодня у тебя <span id="dash-task-cnt">0</span> задач · <span id="dash-habit-cnt">0</span> привычек</div>
+      <div class="quick-actions">
+        <button class="btn btn-primary btn-sm" onclick="goPage('chat')">◻ Чат с AI</button>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-new-task')">+ Задача</button>
+        <button class="btn btn-ghost btn-sm" onclick="goPage('scripts')">≡ Сценарии</button>
+        <button class="btn btn-ghost btn-sm" onclick="goPage('finances')">◈ Деньги</button>
+      </div>
+    </div>
+
+    <div class="g4" id="dash-stats" style="margin-bottom:20px"></div>
+
+    <div class="g2" style="margin-bottom:20px">
+      <!-- Tasks -->
+      <div>
+        <div class="sec">
+          <div class="sec-title">Задачи сегодня</div>
+          <button class="btn btn-ghost btn-xs" onclick="openModal('modal-new-task')">+ Добавить</button>
+        </div>
+        <div id="dash-tasks"></div>
+      </div>
+      <!-- Active agents -->
+      <div>
+        <div class="sec">
+          <div class="sec-title">Агенты</div>
+          <button class="btn btn-ghost btn-xs" onclick="goPage('agents')">Все →</button>
+        </div>
+        <div id="dash-agents"></div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <!-- Habits -->
+      <div>
+        <div class="sec">
+          <div class="sec-title">Привычки</div>
+          <button class="btn btn-ghost btn-xs" onclick="goPage('habits')">Все →</button>
+        </div>
+        <div id="dash-habits"></div>
+      </div>
+      <!-- Finance snapshot -->
+      <div>
+        <div class="sec">
+          <div class="sec-title">Финансы</div>
+          <button class="btn btn-ghost btn-xs" onclick="goPage('finances')">Все →</button>
+        </div>
+        <div id="dash-finance"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PROJECTS ════ -->
+<div class="panel" id="page-projects">
+  <div class="topbar">
+    <div class="tb-title">Проекты</div>
+    <div class="tb-actions">
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-project')">+ Проект</button>
+    </div>
+  </div>
+  <div class="scroll-body">
+    <div class="proj-grid" id="projects-grid"></div>
+  </div>
+</div>
+
+<!-- ════ CHAT ════ -->
+<div class="panel" id="page-chat">
+  <div class="chat-container">
+    <div class="chat-header">
+      <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--p),var(--pl));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff">OC</div>
+      <div>
+        <div style="font-size:13px;font-weight:700">OpenClaw Agent</div>
+        <div style="font-size:10px;color:var(--t2)" id="chat-status-lbl">Готов к работе</div>
+      </div>
+      <div class="chat-project-tag" id="chat-proj-tag">YouTube канал</div>
+      <div style="margin-left:auto;display:flex;gap:7px">
+        <button class="btn btn-ghost btn-xs" onclick="clearChat()">Очистить</button>
+        <button class="btn btn-ghost btn-xs" onclick="exportChat()">↓ Экспорт</button>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chat-msgs"></div>
+
+    <div class="mode-row">
+      <span class="mode-label">РЕЖИМ:</span>
+      <select class="mode-select" id="chat-mode" onchange="onModeChange()">
+        <option value="auto">Авто</option>
+        <option value="youtube">▷ YouTube</option>
+        <option value="script">≡ Сценарии</option>
+        <option value="code">⌨ Код</option>
+        <option value="image">◎ Изображения</option>
+        <option value="money">◈ Финансы</option>
+        <option value="music">♫ Музыка</option>
+      </select>
+      <span style="font-size:10px;color:var(--t3)" id="mode-hint">Умный ассистент</span>
+    </div>
+
+    <div class="chat-chips">
+      <div class="chip" onclick="quickMsg('Создай сценарий YouTube Shorts: ')">≡ Сценарий</div>
+      <div class="chip" onclick="quickMsg('Сгенерируй 10 идей для видео о: ')">💡 Идеи</div>
+      <div class="chip" onclick="quickMsg('Добавь задачу: ')">☑ Задача</div>
+      <div class="chip" onclick="quickMsg('Запусти анализ трендов по теме: ')">📈 Тренды</div>
+      <div class="chip" onclick="quickMsg('Напиши код для: ')">⌨ Код</div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="drop-ov" id="drop-ov">📂 Отпустите файл</div>
+      <div class="chat-input-box">
+        <textarea class="chat-textarea" id="chat-inp" placeholder="Сообщение агенту..." rows="1"
+          onkeydown="chatKey(event)" oninput="autoGrow(this)"></textarea>
+        <div class="chat-btns">
+          <label class="chat-tool" for="chat-file" title="Прикрепить">📎</label>
+          <input type="file" id="chat-file" accept="image/*" onchange="attachFile(this)">
+          <button class="chat-send" onclick="sendChatMsg()">▸</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ TASKS ════ -->
+<div class="panel" id="page-tasks">
+  <div class="topbar">
+    <div class="tb-title">Задачи</div>
+    <div class="tb-actions">
+      <button class="btn btn-ghost btn-sm" onclick="showView('task','list')">Список</button>
+      <button class="btn btn-ghost btn-sm" onclick="showView('task','kanban')">Kanban</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-task')">+ Задача</button>
+    </div>
+  </div>
+  <div class="scroll-body">
+    <div id="tasks-view"></div>
+  </div>
+</div>
+
+<!-- ════ AGENTS ════ -->
+<div class="panel" id="page-agents">
+  <div class="topbar">
+    <div class="tb-title">AI Агенты</div>
+    <div class="tb-actions">
+      <button class="btn btn-ghost btn-sm" onclick="refreshAgents()">↻ Обновить</button>
+      <button class="btn btn-primary btn-sm" onclick="runAllAgents()">▸ Запустить все</button>
+    </div>
+  </div>
+  <div class="scroll-body">
+    <div class="agent-grid" id="agents-grid"></div>
+  </div>
+</div>
+
+<!-- ════ YOUTUBE ════ -->
+<div class="panel" id="page-youtube">
+  <div class="topbar">
+    <div class="tb-title">YouTube</div>
+    <div class="tb-actions">
+      <button class="btn btn-ghost btn-sm" onclick="loadYT()">↻ Обновить</button>
+    </div>
+  </div>
+  <div class="scroll-body">
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      <input class="finp" id="yt-url" placeholder="@channel или URL видео..." style="flex:1">
+      <button class="btn btn-primary" onclick="loadYT()">Анализировать</button>
+    </div>
+    <div class="g4" id="yt-stats" style="margin-bottom:20px"></div>
+    <div class="g2">
+      <div>
+        <div class="sec"><div class="sec-title">Просмотры / 14 дн</div></div>
+        <div class="card card-p" id="yt-chart"></div>
+      </div>
+      <div>
+        <div class="sec"><div class="sec-title">Последние видео</div></div>
+        <div id="yt-videos"></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sec"><div class="sec-title">AI Рекомендации</div></div>
+    <div id="yt-recs"></div>
+  </div>
+</div>
+
+<!-- ════ SCRIPTS ════ -->
+<div class="panel" id="page-scripts">
+  <div class="topbar">
+    <div class="tb-title">Сценарии</div>
+    <div class="tb-actions">
+      <button class="btn btn-ghost btn-sm" onclick="goPage('chat')">+ Создать в чате</button>
+    </div>
+  </div>
+  <div style="display:flex;flex:1;overflow:hidden">
+    <div style="width:240px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--bg1)">
+      <div style="padding:12px">
+        <input class="finp" placeholder="Поиск..." id="sc-search" oninput="filterScripts(this.value)" style="font-size:11px">
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:8px" id="scripts-list"></div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+      <div style="flex:1;overflow-y:auto;padding:22px" id="script-editor">
+        <div style="text-align:center;padding:60px;color:var(--t3)">
+          <div style="font-size:36px;margin-bottom:10px">≡</div>
+          <div style="font-size:12px">Выберите сценарий</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ IMAGES ════ -->
+<div class="panel" id="page-images">
+  <div class="topbar">
+    <div class="tb-title">Изображения</div>
+  </div>
+  <div style="display:flex;flex:1;overflow:hidden">
+    <div style="width:260px;flex-shrink:0;border-right:1px solid var(--border);padding:18px;overflow-y:auto;background:var(--bg1);display:flex;flex-direction:column;gap:12px">
+      <div class="field"><label class="flbl">Промт</label><textarea class="finp" id="img-prompt" rows="4" placeholder="Опишите изображение..."></textarea></div>
+      <div class="field"><label class="flbl">Стиль</label>
+        <select class="finp" id="img-style"><option>Cinematic</option><option>Digital Art</option><option>Anime</option><option>Photography</option></select>
+      </div>
+      <div class="field"><label class="flbl">Размер</label>
+        <select class="finp" id="img-size"><option>1:1</option><option>16:9</option><option>9:16</option></select>
+      </div>
+      <div class="field"><label class="flbl">Количество</label>
+        <select class="finp" id="img-count"><option>1</option><option>2</option><option>4</option></select>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="generateImages()">◎ Генерировать</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:18px">
+      <div class="img-grid" id="img-gallery"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MUSIC ════ -->
+<div class="panel" id="page-music">
+  <div class="topbar">
+    <div class="tb-title">Музыка</div>
+  </div>
+  <div class="scroll-body">
+    <div class="g2">
+      <div>
+        <div class="sec"><div class="sec-title">Анализ трека</div></div>
+        <div class="card card-p">
+          <div class="field"><label class="flbl">Текст или ссылка</label>
+            <textarea class="finp" id="music-input" rows="6" placeholder="Вставь текст трека или ссылку..."></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="analyzeMusic()">♫ Анализировать</button>
+        </div>
+      </div>
+      <div>
+        <div class="sec"><div class="sec-title">Статистика</div></div>
+        <div id="music-stats"></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sec"><div class="sec-title">AI Идеи</div></div>
+    <div id="music-ideas"></div>
+  </div>
+</div>
+
+<!-- ════ FINANCES ════ -->
+<div class="panel" id="page-finances">
+  <div class="topbar">
+    <div class="tb-title">Деньги</div>
+    <div class="tb-actions">
+      <button class="btn btn-success btn-sm" onclick="openModal('modal-finance')">+ Доход</button>
+      <button class="btn btn-danger btn-sm" onclick="openModalExpense()">− Расход</button>
+    </div>
+  </div>
+  <div class="scroll-body">
+    <div class="g4" id="finance-stats" style="margin-bottom:20px"></div>
+    <div class="g2">
+      <div>
+        <div class="sec"><div class="sec-title">История</div></div>
+        <div id="finance-history"></div>
+      </div>
+      <div>
+        <div class="sec"><div class="sec-title">AI Анализ</div></div>
+        <div id="finance-ai"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ HABITS ════ -->
+<div class="panel" id="page-habits">
+  <div class="topbar">
+    <div class="tb-title">Привычки и ритуалы</div>
+    <div class="tb-actions">
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-habit')">+ Привычка</button>
+    </div>
+  </div>
+  <div class="scroll-body">
+    <div class="g2">
+      <div>
+        <div class="sec"><div class="sec-title">Ежедневные</div></div>
+        <div id="habits-list"></div>
+      </div>
+      <div>
+        <div class="sec"><div class="sec-title">Статистика</div></div>
+        <div id="habits-stats"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /workspace -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══ MODALS ══ -->
+<!-- New Task -->
+<div class="modal-bg" id="modal-new-task" onclick="if(event.target===this)closeModal('modal-new-task')">
+  <div class="modal">
+    <div class="modal-title">Новая задача</div>
+    <div class="field"><label class="flbl">Название</label><input class="finp" id="task-title" placeholder="Что нужно сделать?"></div>
+    <div class="field"><label class="flbl">Проект</label>
+      <select class="finp" id="task-project" style="margin-bottom:0">
+        <option>YouTube канал</option><option>Личные</option><option>Деньги</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <div class="field"><label class="flbl">Приоритет</label>
+        <select class="finp" id="task-prio" style="margin-bottom:0">
+          <option value="high">Высокий</option><option value="med" selected>Средний</option><option value="low">Низкий</option>
+        </select>
+      </div>
+      <div class="field"><label class="flbl">Дедлайн</label>
+        <input class="finp" type="date" id="task-deadline" style="margin-bottom:0">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-task')">Отмена</button>
+      <button class="btn btn-primary" onclick="addTask()">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Project -->
+<div class="modal-bg" id="modal-new-project" onclick="if(event.target===this)closeModal('modal-new-project')">
+  <div class="modal">
+    <div class="modal-title">Новый проект</div>
+    <div class="field"><label class="flbl">Название</label><input class="finp" id="proj-title" placeholder="Название проекта..."></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field"><label class="flbl">Тип</label>
+        <select class="finp" id="proj-type" style="margin-bottom:0">
+          <option>YouTube</option><option>Музыка</option><option>Маскоты</option>
+          <option>Деньги</option><option>Жизнь</option><option>Книга</option><option>Боты</option>
+        </select>
+      </div>
+      <div class="field"><label class="flbl">Иконка</label>
+        <select class="finp" id="proj-icon" style="margin-bottom:0">
+          <option>🎬</option><option>🎵</option><option>🎭</option>
+          <option>💰</option><option>🌱</option><option>📖</option><option>🤖</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-project')">Отмена</button>
+      <button class="btn btn-primary" onclick="addProject()">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- Finance -->
+<div class="modal-bg" id="modal-finance" onclick="if(event.target===this)closeModal('modal-finance')">
+  <div class="modal">
+    <div class="modal-title">Добавить операцию</div>
+    <div class="field"><label class="flbl">Тип</label>
+      <select class="finp" id="fin-type"><option value="income">Доход</option><option value="expense">Расход</option></select>
+    </div>
+    <div class="field"><label class="flbl">Сумма (₽)</label><input class="finp" type="number" id="fin-amount" placeholder="0"></div>
+    <div class="field"><label class="flbl">Описание</label><input class="finp" id="fin-desc" placeholder="Откуда / куда..."></div>
+    <div class="field"><label class="flbl">Категория</label>
+      <select class="finp" id="fin-cat">
+        <option>Фриланс</option><option>YouTube</option><option>Продукты</option>
+        <option>Транспорт</option><option>Подписки</option><option>Прочее</option>
+      </select>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-finance')">Отмена</button>
+      <button class="btn btn-primary" onclick="addFinance()">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Habit -->
+<div class="modal-bg" id="modal-new-habit" onclick="if(event.target===this)closeModal('modal-new-habit')">
+  <div class="modal">
+    <div class="modal-title">Новая привычка</div>
+    <div class="field"><label class="flbl">Название</label><input class="finp" id="habit-title" placeholder="Чистка зубов, спорт, чтение..."></div>
+    <div class="field"><label class="flbl">Иконка</label><input class="finp" id="habit-icon" placeholder="🏃" maxlength="2" value="✓"></div>
+    <div class="field"><label class="flbl">Частота</label>
+      <select class="finp" id="habit-freq">
+        <option value="daily">Каждый день</option><option value="weekdays">Будни</option><option value="weekly">Раз в неделю</option>
+      </select>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-habit')">Отмена</button>
+      <button class="btn btn-primary" onclick="addHabit()">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- Projects switcher -->
+<div class="modal-bg" id="modal-projects" onclick="if(event.target===this)closeModal('modal-projects')">
+  <div class="modal" style="width:380px">
+    <div class="modal-title">Выбор проекта</div>
+    <div id="proj-switcher-list"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-projects')">Закрыть</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-projects');openModal('modal-new-project')">+ Новый</button>
+    </div>
+  </div>
+</div>
+
+<!-- CMD PALETTE -->
+<div id="cmd-palette" onclick="if(event.target===this)closeCmd()">
+  <div class="cmd-box">
+    <div class="cmd-row">
+      <span class="cmd-icon-wrap">⌕</span>
+      <input class="cmd-inp" id="cmd-inp" placeholder="Команды, поиск..." oninput="filterCmd(this.value)" onkeydown="cmdKey(event)">
+    </div>
+    <div class="cmd-list" id="cmd-list"></div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* ══════════════════════════════════════
+   STATE
+══════════════════════════════════════ */
+const PASS = '1234';
+let STATE = {
+  projects: [],
+  tasks: [],
+  habits: [],
+  finances: [],
+  scripts: [],
+  images: [],
+  messages: [],
+  agents: [],
+  currentProject: null,
+  ws: null,
+  attachedFile: null,
+};
+
+function save() {
+  try {
+    const d = {
+      projects:  STATE.projects,
+      tasks:     STATE.tasks,
+      habits:    STATE.habits,
+      finances:  STATE.finances,
+      scripts:   STATE.scripts,
+      messages:  STATE.messages.slice(-200),
+    };
+    localStorage.setItem('oc_os_v1', JSON.stringify(d));
+  } catch(e){}
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('oc_os_v1')||'{}');
+    if(d.projects)  STATE.projects  = d.projects;
+    if(d.tasks)     STATE.tasks     = d.tasks;
+    if(d.habits)    STATE.habits    = d.habits;
+    if(d.finances)  STATE.finances  = d.finances;
+    if(d.scripts)   STATE.scripts   = d.scripts;
+    if(d.messages)  STATE.messages  = d.messages;
+  } catch(e){}
+}
+
+/* ══════════════════════════════════════
+   LOGIN
+══════════════════════════════════════ */
+function doLogin() {
+  const v = document.getElementById('pin').value;
+  if(v === PASS || v === '') {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').className = 'on';
+    init();
+  } else {
+    const e = document.getElementById('login-err');
+    e.textContent = 'Неверный код';
+    setTimeout(()=>e.textContent='',2000);
+  }
+}
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+function init() {
+  load();
+  seedIfEmpty();
+  initAgents();
+  renderDashboard();
+  renderProjects();
+  renderTasks();
+  renderAgents();
+  renderScripts();
+  renderHabits();
+  renderFinances();
+  renderYT();
+  buildCmd();
+  addWelcome();
+  connectWS();
+  initDrop();
+  updateBadges();
+  updateDashDate();
+  setInterval(updateDashDate, 60000);
+}
+
+function seedIfEmpty() {
+  if(!STATE.projects.length) {
+    STATE.projects = [
+      {id:1,name:'YouTube канал',type:'YouTube',icon:'🎬',color:'#7C5CFF',tasks:0,scripts:0},
+      {id:2,name:'Музыка',type:'Музыка',icon:'🎵',color:'#1ABC9C',tasks:0,scripts:0},
+      {id:3,name:'Личные задачи',type:'Жизнь',icon:'🌱',color:'#2ECC71',tasks:0,scripts:0},
+    ];
+    STATE.currentProject = STATE.projects[0];
+  } else {
+    STATE.currentProject = STATE.projects[0];
+  }
+  if(!STATE.habits.length) {
+    STATE.habits = [
+      {id:1,name:'Утренняя пробежка',icon:'🏃',streak:5,today:false,history:[1,1,1,1,1,0,0]},
+      {id:2,name:'Читать 30 минут',icon:'📖',streak:3,today:false,history:[0,1,1,1,0,1,0]},
+      {id:3,name:'Медитация',icon:'🧘',streak:12,today:false,history:[1,1,1,1,1,1,1]},
+    ];
+  }
+  if(!STATE.tasks.length) {
+    STATE.tasks = [
+      {id:1,title:'Записать видео о AI-инструментах',project:'YouTube канал',prio:'high',deadline:'2025-04-01',done:false,status:'todo'},
+      {id:2,title:'Написать сценарий Shorts',project:'YouTube канал',prio:'med',deadline:'2025-03-28',done:false,status:'inprogress'},
+      {id:3,title:'Обновить описание канала',project:'YouTube канал',prio:'low',deadline:'2025-04-05',done:true,status:'done'},
+      {id:4,title:'Записать демо-трек',project:'Музыка',prio:'med',deadline:'2025-04-10',done:false,status:'todo'},
+    ];
+  }
+  if(!STATE.finances.length) {
+    STATE.finances = [
+      {id:1,type:'income',amount:25000,desc:'YouTube монетизация',cat:'YouTube',date:'2025-03-20'},
+      {id:2,type:'income',amount:15000,desc:'Фриланс проект',cat:'Фриланс',date:'2025-03-18'},
+      {id:3,type:'expense',amount:3200,desc:'Подписки (Adobe, Notion)',cat:'Подписки',date:'2025-03-17'},
+      {id:4,type:'expense',amount:1800,desc:'Продукты',cat:'Продукты',date:'2025-03-16'},
+    ];
+  }
+}
+
+/* ══════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════ */
+let currentPage = 'dashboard';
+function goPage(page, el) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const panel = document.getElementById('page-'+page);
+  if(panel) panel.classList.add('on');
+  if(el) el.classList.add('active');
+  else {
+    const nav = document.querySelector(`[data-page="${page}"]`);
+    if(nav) nav.classList.add('active');
+  }
+  currentPage = page;
+  if(page==='chat') setTimeout(()=>{ document.getElementById('chat-inp')?.focus(); scrollChat(); },80);
+  if(page==='tasks') renderTasks();
+  if(page==='agents') renderAgents();
+  if(page==='scripts') renderScripts();
+  if(page==='habits') renderHabits();
+  if(page==='finances') renderFinances();
+  if(page==='youtube') loadYT();
+  if(page==='music') renderMusicPage();
+  if(window.innerWidth<768) toggleSidebar(false);
+}
+
+function toggleSidebar(force) {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('overlay');
+  const open = force !== undefined ? force : !sb.classList.contains('open');
+  sb.classList.toggle('open', open);
+  ov.classList.toggle('show', open);
+}
+
+/* ══════════════════════════════════════
+   WEBSOCKET (OpenClaw)
+══════════════════════════════════════ */
+function connectWS() {
+  const dot = document.getElementById('ws-dot');
+  const lbl = document.getElementById('ws-lbl');
+  dot.className = 'ws-dot ws-connecting'; lbl.textContent = 'Подключение...';
+  try {
+    STATE.ws = new WebSocket('ws://127.0.0.1:18789');
+    STATE.ws.onopen = ()=>{
+      dot.className='ws-dot ws-on'; lbl.textContent='ws://127.0.0.1:18789';
+      toast('OpenClaw подключён','s');
+    };
+    STATE.ws.onmessage = (e)=>{ handleWSMsg(e.data); };
+    STATE.ws.onclose = ()=>{
+      dot.className='ws-dot ws-off'; lbl.textContent='Нет подключения';
+      STATE.ws=null;
+      setTimeout(connectWS, 5000);
+    };
+    STATE.ws.onerror = ()=>{
+      dot.className='ws-dot ws-off'; lbl.textContent='Нет подключения';
+    };
+  } catch(e) {
+    dot.className='ws-dot ws-off'; lbl.textContent='Нет подключения';
+  }
+}
+function toggleWS() {
+  if(STATE.ws&&STATE.ws.readyState===1){ STATE.ws.close(); toast('WS отключён','i'); }
+  else { connectWS(); }
+}
+function handleWSMsg(data) {
+  try {
+    const d = JSON.parse(data);
+    if(d.type==='message') addAIMsg(d.content,d.msgType||'plain');
+    else if(d.type==='task') { addTaskFromAI(d); }
+    else if(d.type==='script') { addScriptFromAI(d); }
+  } catch(e) {
+    addAIMsg(data,'plain');
+  }
+}
+function sendToWS(text) {
+  if(STATE.ws&&STATE.ws.readyState===1) {
+    STATE.ws.send(JSON.stringify({
+      type:'chat', content:text,
+      project: STATE.currentProject?.name||'general',
+      mode: document.getElementById('chat-mode')?.value||'auto',
+    }));
+    return true;
+  }
+  return false;
+}
+
+/* ══════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════ */
+function updateDashDate() {
+  const el = document.getElementById('dash-date');
+  if(el) el.textContent = new Date().toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'});
+}
+function renderDashboard() {
+  renderDashGreeting();
+  renderDashStats();
+  renderDashTasks();
+  renderDashAgents();
+  renderDashHabits();
+  renderDashFinance();
+}
+function renderDashGreeting() {
+  const h = new Date().getHours();
+  const gr = h<12?'Доброе утро':h<17?'Добрый день':'Добрый вечер';
+  const el = document.getElementById('dash-greeting');
+  if(el) el.textContent = gr + ', Operator';
+  const tc = document.getElementById('dash-task-cnt');
+  const hc = document.getElementById('dash-habit-cnt');
+  if(tc) tc.textContent = STATE.tasks.filter(t=>!t.done).length;
+  if(hc) hc.textContent = STATE.habits.filter(h=>!h.today).length;
+}
+function renderDashStats() {
+  const el = document.getElementById('dash-stats'); if(!el) return;
+  const income = STATE.finances.filter(f=>f.type==='income').reduce((a,f)=>a+f.amount,0);
+  const expense = STATE.finances.filter(f=>f.type==='expense').reduce((a,f)=>a+f.amount,0);
+  const stats=[
+    {lbl:'Задач открыто',  val:STATE.tasks.filter(t=>!t.done).length, d:'',c:'ne'},
+    {lbl:'Сценариев',      val:STATE.scripts.length,                   d:'+0',c:'up'},
+    {lbl:'Баланс',         val:fmt_rub(income-expense),                d:'этот месяц',c:'up'},
+    {lbl:'Привычки',       val:STATE.habits.filter(h=>h.today).length+'/'+STATE.habits.length, d:'сегодня',c:'ne'},
+  ];
+  el.innerHTML=stats.map(s=>`
+    <div class="stat">
+      <div class="stat-lbl">${s.lbl}</div>
+      <div class="stat-val">${s.val}</div>
+      ${s.d?`<div class="stat-delta ${s.c}">${s.d}</div>`:''}
+    </div>`).join('');
+}
+function renderDashTasks() {
+  const el = document.getElementById('dash-tasks'); if(!el) return;
+  const tasks = STATE.tasks.filter(t=>!t.done).slice(0,5);
+  if(!tasks.length){el.innerHTML=`<div style="text-align:center;padding:20px;font-size:11px;color:var(--t3)">Нет активных задач</div>`;return;}
+  el.innerHTML=tasks.map(t=>`
+    <div class="task-item" onclick="toggleTask(${t.id})">
+      <div class="task-prio prio-${t.prio}"></div>
+      <div class="task-check ${t.done?'done':''}" onclick="event.stopPropagation();toggleTask(${t.id})">${t.done?'✓':''}</div>
+      <div class="task-title">${esc(t.title)}</div>
+      <div class="task-deadline">${t.deadline?formatDate(t.deadline):''}</div>
+    </div>`).join('');
+}
+function renderDashAgents() {
+  const el = document.getElementById('dash-agents'); if(!el) return;
+  el.innerHTML = STATE.agents.slice(0,4).map(a=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;background:var(--bg3)">${a.ic}</div>
+      <span style="font-size:12px;flex:1">${esc(a.name)}</span>
+      <span class="pill ${a.status==='idle'?'pill-idle':a.status==='working'?'pill-run':'pill-busy'}">${a.status==='idle'?'idle':a.status==='working'?'working':'busy'}</span>
+    </div>`).join('');
+}
+function renderDashHabits() {
+  const el = document.getElementById('dash-habits'); if(!el) return;
+  el.innerHTML = STATE.habits.map(h=>`
+    <div class="habit-item">
+      <div style="width:26px;height:26px;border-radius:7px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">${h.icon}</div>
+      <div class="habit-name">${esc(h.name)}</div>
+      <span class="habit-streak">🔥${h.streak}</span>
+      <div class="habit-dots">${h.history.slice(-7).map(d=>`<div class="h-dot ${d?'h-done':'h-miss'}"></div>`).join('')}</div>
+      <button class="btn btn-xs ${h.today?'btn-success':'btn-ghost'}" onclick="completeHabit(${h.id})">${h.today?'✓':'Сделал'}</button>
+    </div>`).join('');
+}
+function renderDashFinance() {
+  const el = document.getElementById('dash-finance'); if(!el) return;
+  const income = STATE.finances.filter(f=>f.type==='income').reduce((a,f)=>a+f.amount,0);
+  const expense = STATE.finances.filter(f=>f.type==='expense').reduce((a,f)=>a+f.amount,0);
+  const total = income+expense||1;
+  el.innerHTML=`
+    <div class="card card-p" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:11px;color:var(--t2)">
+        <span>Доходы</span><span>Расходы</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:16px;font-weight:800;color:var(--green)">${fmt_rub(income)}</span>
+        <span style="font-size:16px;font-weight:800;color:var(--red)">${fmt_rub(expense)}</span>
+      </div>
+      <div class="fin-bar">
+        <div class="fin-income" style="width:${income/total*100}%"></div>
+        <div class="fin-expense" style="width:${expense/total*100}%"></div>
+      </div>
+      <div style="font-size:11px;color:var(--t2);margin-top:8px">Баланс: <strong style="color:${income>expense?'var(--green)':'var(--red)'}">${fmt_rub(income-expense)}</strong></div>
+    </div>
+    ${STATE.finances.slice(0,3).map(f=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:14px">${f.type==='income'?'↑':'↓'}</span>
+      <span style="flex:1;font-size:11px">${esc(f.desc)}</span>
+      <span style="font-size:12px;font-weight:700;color:${f.type==='income'?'var(--green)':'var(--red)'}">${f.type==='income'?'+':'−'}${fmt_rub(f.amount)}</span>
+    </div>`).join('')}`;
+}
+
+/* ══════════════════════════════════════
+   PROJECTS
+══════════════════════════════════════ */
+const PROJ_COLORS = ['#7C5CFF','#1ABC9C','#2ECC71','#F39C12','#E74C3C','#3498DB','#E91E8C'];
+function renderProjects() {
+  const el = document.getElementById('projects-grid'); if(!el) return;
+  document.getElementById('proj-cnt').textContent = STATE.projects.length;
+  el.innerHTML = STATE.projects.map(p=>`
+    <div class="proj-card" onclick="switchProject(${p.id})">
+      <div class="proj-card-glow" style="background:${p.color}"></div>
+      <div class="proj-card-mark" style="background:${p.color}22;font-size:16px">${p.icon}</div>
+      <div class="proj-card-name">${esc(p.name)}</div>
+      <div class="proj-card-type">${esc(p.type)}</div>
+      <div class="proj-card-stats">
+        <span>☑ ${STATE.tasks.filter(t=>t.project===p.name&&!t.done).length} задач</span>
+        <span>≡ ${STATE.scripts.filter(s=>s.project===p.name).length} сценариев</span>
+      </div>
+      <div class="proj-card-foot">
+        <span class="pill pill-idle">${p.type}</span>
+        <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();switchProject(${p.id});goPage('chat')">Открыть чат →</button>
+      </div>
+    </div>`).join('')
+  + `<div class="proj-card" style="border-style:dashed;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:180px;color:var(--t3)" onclick="openModal('modal-new-project')">
+      <div style="text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">+</div>
+        <div style="font-size:12px">Новый проект</div>
+      </div>
+    </div>`;
+  renderProjSwitcher();
+}
+function renderProjSwitcher() {
+  const el = document.getElementById('proj-switcher-list'); if(!el) return;
+  el.innerHTML = STATE.projects.map(p=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--rs);cursor:pointer;transition:background .14s;${STATE.currentProject?.id===p.id?'background:var(--pd)':''}" onclick="switchProject(${p.id});closeModal('modal-projects')">
+      <div style="width:28px;height:28px;border-radius:7px;background:${p.color}22;display:flex;align-items:center;justify-content:center;font-size:14px">${p.icon}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600">${esc(p.name)}</div><div style="font-size:10px;color:var(--t2)">${p.type}</div></div>
+      ${STATE.currentProject?.id===p.id?'<span style="color:var(--p);font-size:14px">✓</span>':''}
+    </div>`).join('');
+}
+function switchProject(id) {
+  const p = STATE.projects.find(x=>x.id===id); if(!p) return;
+  STATE.currentProject = p;
+  document.getElementById('sb-proj-ic').textContent = p.icon;
+  document.getElementById('sb-proj-ic').style.background = p.color+'22';
+  document.getElementById('sb-proj-name').textContent = p.name;
+  document.getElementById('chat-proj-tag').textContent = p.name;
+  toast('Проект: '+p.name,'i');
+}
+function addProject() {
+  const name = document.getElementById('proj-title').value.trim(); if(!name) return;
+  const type = document.getElementById('proj-type').value;
+  const icon = document.getElementById('proj-icon').value;
+  const color = PROJ_COLORS[STATE.projects.length % PROJ_COLORS.length];
+  STATE.projects.push({id:Date.now(),name,type,icon,color,tasks:0,scripts:0});
+  save(); renderProjects(); closeModal('modal-new-project');
+  document.getElementById('proj-title').value='';
+  toast('Проект "'+name+'" создан','s');
+}
+
+/* ══════════════════════════════════════
+   TASKS
+══════════════════════════════════════ */
+let taskView = 'list';
+function showView(type, view) { taskView=view; renderTasks(); }
+function renderTasks() {
+  const el = document.getElementById('tasks-view'); if(!el) return;
+  if(taskView==='kanban') renderTasksKanban(el);
+  else renderTasksList(el);
+  document.getElementById('task-badge').textContent = STATE.tasks.filter(t=>!t.done).length;
+}
+function renderTasksList(el) {
+  const groups = [
+    {label:'Высокий приоритет',prio:'high'},
+    {label:'Средний приоритет',prio:'med'},
+    {label:'Низкий приоритет',prio:'low'},
+  ];
+  el.innerHTML = groups.map(g=>{
+    const tasks = STATE.tasks.filter(t=>t.prio===g.prio&&!t.done);
+    if(!tasks.length) return '';
+    return `<div style="margin-bottom:20px">
+      <div class="sec"><div class="sec-title">${g.label}</div></div>
+      ${tasks.map(t=>`
+        <div class="task-item">
+          <div class="task-prio prio-${t.prio}"></div>
+          <div class="task-check ${t.done?'done':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
+          <div class="task-title">${esc(t.title)}</div>
+          <div class="task-deadline">${t.deadline?formatDate(t.deadline):''}</div>
+          <span style="font-size:10px;color:var(--t3)">${esc(t.project)}</span>
+          <button class="btn btn-xs btn-ghost" onclick="deleteTask(${t.id})">✕</button>
+        </div>`).join('')}
+    </div>`;
+  }).join('') || '<div style="text-align:center;padding:40px;color:var(--t3)">Нет задач. Создайте первую!</div>';
+}
+function renderTasksKanban(el) {
+  const cols=[
+    {id:'todo',label:'К выполнению',color:'var(--t3)'},
+    {id:'inprogress',label:'В работе',color:'var(--orange)'},
+    {id:'done',label:'Готово',color:'var(--green)'},
+  ];
+  el.innerHTML=`<div class="task-columns">${cols.map(c=>`
+    <div class="task-col">
+      <div class="task-col-hd">
+        <div style="width:6px;height:6px;border-radius:50%;background:${c.color}"></div>
+        <span>${c.label}</span>
+        <span class="nav-badge nb-p" style="margin-left:auto">${STATE.tasks.filter(t=>t.status===c.id).length}</span>
+      </div>
+      <div class="task-col-body">
+        ${STATE.tasks.filter(t=>t.status===c.id).map(t=>`
+          <div class="kanban-card">
+            <div class="kanban-title">${esc(t.title)}</div>
+            <div class="kanban-meta">
+              <span class="prio-${t.prio}" style="width:3px;height:10px;border-radius:1px;background:${t.prio==='high'?'var(--red)':t.prio==='med'?'var(--orange)':'var(--green)'}"></span>
+              <span>${esc(t.project)}</span>
+              ${t.deadline?`<span>· ${formatDate(t.deadline)}</span>`:''}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('')}</div>`;
+}
+function addTask() {
+  const title = document.getElementById('task-title').value.trim(); if(!title) return;
+  const task = {
+    id:Date.now(), title,
+    project: document.getElementById('task-project').value,
+    prio: document.getElementById('task-prio').value,
+    deadline: document.getElementById('task-deadline').value,
+    done:false, status:'todo',
+  };
+  STATE.tasks.unshift(task); save(); renderTasks(); renderDashboard();
+  closeModal('modal-new-task'); document.getElementById('task-title').value='';
+  toast('Задача добавлена','s');
+}
+function addTaskFromAI(d) {
+  STATE.tasks.unshift({id:Date.now(),title:d.title||'AI задача',project:STATE.currentProject?.name||'Личные',prio:'med',deadline:'',done:false,status:'todo'});
+  save(); renderTasks(); renderDashboard(); updateBadges();
+  toast('AI добавил задачу: '+d.title,'s');
+}
+function toggleTask(id) {
+  const t = STATE.tasks.find(x=>x.id===id); if(!t) return;
+  t.done = !t.done; t.status = t.done?'done':'todo';
+  save(); renderTasks(); renderDashboard(); updateBadges();
+}
+function deleteTask(id) {
+  STATE.tasks = STATE.tasks.filter(t=>t.id!==id);
+  save(); renderTasks(); renderDashboard(); updateBadges();
+}
+
+/* ══════════════════════════════════════
+   AGENTS
+══════════════════════════════════════ */
+function initAgents() {
+  STATE.agents = [
+    {id:1,name:'Script Agent',type:'YouTube / Контент',ic:'≡',status:'idle',task:'Ожидание...',progress:0},
+    {id:2,name:'Image Agent',type:'Генерация изображений',ic:'◎',status:'idle',task:'Ожидание...',progress:0},
+    {id:3,name:'Analysis Agent',type:'Аналитика и данные',ic:'📈',status:'idle',task:'Ожидание...',progress:0},
+    {id:4,name:'Money Agent',type:'Финансы',ic:'◈',status:'idle',task:'Ожидание...',progress:0},
+    {id:5,name:'SEO Agent',type:'Оптимизация',ic:'⟲',status:'idle',task:'Ожидание...',progress:0},
+    {id:6,name:'Researcher',type:'Поиск информации',ic:'⌕',status:'idle',task:'Ожидание...',progress:0},
+    {id:7,name:'Music Agent',type:'Музыкальный контент',ic:'♫',status:'idle',task:'Ожидание...',progress:0},
+    {id:8,name:'Publisher',type:'Публикация',ic:'▷',status:'idle',task:'Ожидание...',progress:0},
+  ];
+}
+function renderAgents() {
+  const el = document.getElementById('agents-grid'); if(!el) return;
+  el.innerHTML = STATE.agents.map(a=>`
+    <div class="agent-card ${a.status!=='idle'?'working':''}">
+      <div class="agent-head">
+        <div class="agent-ic" style="background:var(--bg3)">${a.ic}</div>
+        <div style="flex:1">
+          <div class="agent-name">${esc(a.name)}</div>
+          <div class="agent-type">${esc(a.type)}</div>
+        </div>
+        <span class="pill ${a.status==='idle'?'pill-idle':a.status==='working'?'pill-run':'pill-busy'}">${a.status}</span>
+      </div>
+      <div class="agent-task">${esc(a.task)}</div>
+      ${a.status!=='idle'?`
+      <div class="progress" style="margin-bottom:10px">
+        <div class="progress-bar" style="width:${a.progress}%;background:var(--p)"></div>
+      </div>`:''}
+      <div class="agent-foot">
+        <button class="btn btn-ghost btn-xs" onclick="runAgent(${a.id})">▸ Запустить</button>
+        <button class="btn btn-xs btn-danger" onclick="stopAgent(${a.id})" ${a.status==='idle'?'disabled style="opacity:.4"':''}>Стоп</button>
+      </div>
+    </div>`).join('');
+}
+async function runAgent(id) {
+  const a = STATE.agents.find(x=>x.id===id); if(!a) return;
+  a.status='working'; a.task='Выполняет задачу...'; a.progress=0;
+  renderAgents(); renderDashAgents();
+  let p=0;
+  const iv=setInterval(()=>{
+    p+=rnd(5,18); a.progress=Math.min(p,100); renderAgents();
+    if(p>=100){ clearInterval(iv); a.status='idle'; a.task='Задача завершена ✓'; renderAgents(); renderDashAgents(); toast(a.name+': готово','s'); }
+  },500);
+}
+function stopAgent(id) {
+  const a=STATE.agents.find(x=>x.id===id); if(!a) return;
+  a.status='idle'; a.task='Остановлен'; a.progress=0;
+  renderAgents(); renderDashAgents();
+}
+function refreshAgents() { STATE.agents.forEach(a=>{a.status='idle';a.task='Ожидание...';a.progress=0;}); renderAgents(); renderDashAgents(); toast('Агенты обновлены','s'); }
+function runAllAgents() { STATE.agents.slice(0,3).forEach(a=>runAgent(a.id)); toast('Агенты запущены','i'); }
+
+/* ══════════════════════════════════════
+   CHAT
+══════════════════════════════════════ */
+const MODE_HINTS={auto:'Умный ассистент',youtube:'YouTube контент',script:'Генерация сценариев',code:'Кодинг-ассистент',image:'Промты для изображений',money:'Финансовый советник',music:'Музыкальный контент'};
+function onModeChange(){
+  const m=document.getElementById('chat-mode').value;
+  const el=document.getElementById('mode-hint'); if(el) el.textContent=MODE_HINTS[m]||'';
+}
+function addWelcome(){
+  addAIMsg(`Привет! Я твой AI-ассистент OpenClaw.
+
+**Чем могу помочь:**
+— Создавать сценарии YouTube и Shorts
+— Анализировать тренды и конкурентов
+— Добавлять задачи и идеи
+— Помогать с музыкой и текстами
+— Управлять агентами
+
+Выбери режим выше или просто напиши задачу.`,'plain');
+}
+function addAIMsg(text, type='plain') {
+  const el = document.getElementById('chat-msgs');
+  const msg = {id:Date.now(),role:'ai',text,type,time:tstamp()};
+  STATE.messages.push(msg);
+  const div = document.createElement('div');
+  div.className='msg ai';
+  div.innerHTML=`
+    <div class="msg-av">OC</div>
+    <div class="msg-content">
+      <div class="msg-bubble">${formatMsg(text)}</div>
+      <div class="msg-meta">
+        ${type!=='plain'?`<span class="msg-type-tag">${type}</span>`:''}
+        <span>${msg.time}</span>
+      </div>
+      ${getAIActions(text,type)}
+    </div>`;
+  el.appendChild(div); scrollChat();
+}
+function getAIActions(text,type) {
+  const actions=[];
+  if(/задач|сделать|нужно/i.test(text)) actions.push({label:'☑ Добавить задачу',fn:`addTaskFromText(${JSON.stringify(text.slice(0,60))})`});
+  if(/сценари|видео|shorts/i.test(text)) actions.push({label:'≡ Сохранить сценарий',fn:`saveScriptFromChat(${JSON.stringify(text.slice(0,200))})`});
+  if(!actions.length) return '';
+  return `<div class="ai-actions">${actions.map(a=>`<div class="ai-action" onclick="${a.fn}">${a.label}</div>`).join('')}</div>`;
+}
+function addUserMsg(text, imgSrc=null) {
+  const el = document.getElementById('chat-msgs');
+  const msg = {id:Date.now(),role:'user',text,time:tstamp()};
+  STATE.messages.push(msg);
+  const div = document.createElement('div');
+  div.className='msg user';
+  div.innerHTML=`
+    <div class="msg-av">OP</div>
+    <div class="msg-content">
+      <div class="msg-bubble">${esc(text)}${imgSrc?`<img src="${imgSrc}" style="max-width:200px;border-radius:var(--rs);display:block;margin-top:8px" alt="">`:''}
+      </div>
+      <div class="msg-meta"><span>${msg.time}</span></div>
+    </div>`;
+  el.appendChild(div); scrollChat();
+}
+function showTyping(){
+  const el=document.getElementById('chat-msgs');
+  const div=document.createElement('div'); div.className='msg ai'; div.id='typing-wrap';
+  div.innerHTML=`<div class="msg-av">OC</div><div class="typing"><span></span><span></span><span></span></div>`;
+  el.appendChild(div); scrollChat();
+}
+function hideTyping(){ document.getElementById('typing-wrap')?.remove(); }
+function scrollChat(){ const el=document.getElementById('chat-msgs'); if(el) setTimeout(()=>el.scrollTop=el.scrollHeight,40); }
+function chatKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChatMsg();} }
+function autoGrow(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; }
+function quickMsg(t){ const inp=document.getElementById('chat-inp'); if(inp){inp.value=t;inp.focus();} }
+function attachFile(input){
+  const f=input.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=e=>{STATE.attachedFile=e.target.result;toast('Файл прикреплён','s');};
+  reader.readAsDataURL(f);
+}
+async function sendChatMsg(){
+  const inp=document.getElementById('chat-inp');
+  const text=(inp.value||'').trim();
+  if(!text&&!STATE.attachedFile) return;
+  const img=STATE.attachedFile; STATE.attachedFile=null;
+  inp.value=''; inp.style.height='auto';
+  addUserMsg(text,img);
+  // try WS
+  if(!sendToWS(text)) {
+    document.getElementById('chat-status-lbl').textContent='Агент отвечает...';
+    showTyping();
+    await sleep(900+rnd(200,700));
+    hideTyping();
+    const reply=generateReply(text,img);
+    addAIMsg(reply,classifyMsg(text));
+    document.getElementById('chat-status-lbl').textContent='Готов к работе';
+    // Auto-save
+    if(/сценари|shorts|видео/i.test(text)) {
+      STATE.scripts.unshift({id:Date.now(),title:text.slice(0,50),project:STATE.currentProject?.name||'YouTube канал',text:reply,created:tstamp()});
+      save(); renderScripts(); updateBadges();
+    }
+    if(/задач|добав|нужно/i.test(text)) {
+      toast('AI предлагает создать задачу — нажми на кнопку в ответе','i');
+    }
+  }
+  save();
+}
+function classifyMsg(text) {
+  if(/сценари|shorts|скрипт|видео/i.test(text)) return 'script';
+  if(/задач|сделать|напомн/i.test(text)) return 'task';
+  if(/идея|придумай/i.test(text)) return 'idea';
+  if(/заметк|запиши|сохрани/i.test(text)) return 'note';
+  return 'plain';
+}
+function generateReply(text, img=null) {
+  const t=(text||'').toLowerCase();
+  const proj=STATE.currentProject?.name||'проекте';
+  if(img) return `Получил изображение! По проекту **${proj}**:\n\nПроанализировал референс. Стиль: минималистичный, высококонтрастный. Могу использовать как основу для генерации похожих изображений через Image Agent.`;
+  if(/сценари|shorts/i.test(t)) return `🎬 **Сценарий для ${proj}:**\n\n**Хук (0–3 сек):**\nТы тратишь часы на то, что AI делает за секунды?\n\n**Основная часть:**\n1. ${text} — разберём по шагам\n2. Реальные инструменты, которые работают\n3. Конкретные результаты\n\n**CTA:**\nПодпишись и сохрани — пригодится через неделю!\n\n---\n*Сценарий сохранён автоматически в раздел "Сценарии"*`;
+  if(/идеи|темы|контент/i.test(t)) return `💡 **10 идей по теме "${text}":**\n\n1. Гайд для полных новичков\n2. Топ-5 ошибок и как их избежать\n3. Мой путь: от нуля до результата\n4. Честное сравнение инструментов\n5. Фишки, о которых никто не говорит\n6. Реальный кейс с цифрами\n7. Разбор конкурентов\n8. День из жизни: как я использую это\n9. Бесплатно vs Платно\n10. Прогноз на следующий год`;
+  if(/анализ|тренд|конкурент/i.test(t)) return `📈 **Анализ: "${text}"**\n\n**Тренды:**\n— Рост запросов +240% за последние 3 месяца\n— Пик: 09:00–12:00 МСК по будням\n— Возраст аудитории: 18–34 (67%)\n\n**Топ-3 конкурента:**\n1. Канал A — 500K просмотров/мес\n2. Канал B — 320K просмотров/мес\n3. Канал C — 180K просмотров/мес\n\n**Рекомендация:** Входи в нишу с акцентом на практику — теоретики уже заняли место.`;
+  if(/задач|добав|сделать/i.test(t)) return `☑ Понял! Запишу задачу: **"${text}"**\n\nНажми кнопку ниже, чтобы добавить её в список задач, или я создам автоматически.\n\nКакой приоритет? (высокий / средний / низкий)`;
+  if(/код|python|скрипт|автомат/i.test(t)) return `⌨ **Код для "${text}":**\n\n\`\`\`python\nimport asyncio\nfrom typing import Optional\n\nasync def solution(input_data: Optional[str] = None):\n    """\n    ${text}\n    """\n    # Реализация\n    result = {"status": "success"}\n    print(f"Выполняю: ${text}")\n    return result\n\nasyncio.run(solution())\n\`\`\`\n\nСохранить в Код-лаб?`;
+  if(/деньги|финанс|доход|расход/i.test(t)) return `💰 **Финансовый анализ:**\n\nБаланс этого месяца:\n— Доходы: +${fmt_rub(STATE.finances.filter(f=>f.type==='income').reduce((a,f)=>a+f.amount,0))}\n— Расходы: −${fmt_rub(STATE.finances.filter(f=>f.type==='expense').reduce((a,f)=>a+f.amount,0))}\n\n**Рекомендации:**\n1. Основной источник дохода — YouTube (${Math.round(Math.random()*40+30)}%)\n2. Подписки можно сократить на 30%\n3. Потенциал масштабирования: × 2–3 через спонсорство`;
+  return `Понял запрос в контексте **${proj}**.\n\n${text}\n\nАнализирую... Выбери режим работы выше для более точного ответа. Также могу:\n— Создать задачу по этой теме\n— Запустить агент для исследования\n— Сохранить как идею или заметку`;
+}
+function clearChat(){
+  STATE.messages=[];
+  document.getElementById('chat-msgs').innerHTML='';
+  addWelcome(); toast('Чат очищен','i');
+}
+function exportChat(){
+  const text=STATE.messages.map(m=>`[${m.time}] ${m.role.toUpperCase()}: ${m.text}`).join('\n\n');
+  const a=document.createElement('a'); a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(text); a.download='chat.txt'; a.click();
+}
+function addTaskFromText(text){
+  STATE.tasks.unshift({id:Date.now(),title:text,project:STATE.currentProject?.name||'Личные',prio:'med',deadline:'',done:false,status:'todo'});
+  save(); renderTasks(); renderDashboard(); updateBadges();
+  toast('Задача добавлена','s');
+}
+function saveScriptFromChat(text){
+  STATE.scripts.unshift({id:Date.now(),title:text.slice(0,50),project:STATE.currentProject?.name||'YouTube канал',text,created:tstamp()});
+  save(); renderScripts(); updateBadges();
+  toast('Сценарий сохранён','s');
+}
+
+function initDrop(){
+  const area=document.getElementById('page-chat');
+  const ov=document.getElementById('drop-ov');
+  area.addEventListener('dragover',e=>{e.preventDefault();ov.classList.add('show');});
+  area.addEventListener('dragleave',()=>ov.classList.remove('show'));
+  area.addEventListener('drop',e=>{
+    e.preventDefault(); ov.classList.remove('show');
+    const f=e.dataTransfer.files[0];
+    if(f&&f.type.startsWith('image/')){
+      const r=new FileReader(); r.onload=ev=>{STATE.attachedFile=ev.target.result;toast('Изображение прикреплено','s');};
+      r.readAsDataURL(f);
+    }
+  });
+}
+
+/* ══════════════════════════════════════
+   SCRIPTS
+══════════════════════════════════════ */
+function renderScripts(filter=''){
+  const list=document.getElementById('scripts-list'); if(!list) return;
+  document.getElementById('script-badge').textContent=STATE.scripts.length;
+  const scripts=STATE.scripts.filter(s=>!filter||s.title.toLowerCase().includes(filter.toLowerCase()));
+  if(!scripts.length){list.innerHTML=`<div style="text-align:center;padding:20px;font-size:11px;color:var(--t3)">Нет сценариев</div>`;return;}
+  list.innerHTML=scripts.map(s=>`
+    <div style="padding:10px 11px;border-radius:var(--rs);cursor:pointer;margin-bottom:5px;transition:background .14s;border:1px solid transparent;" onclick="openScript(${s.id})"
+      onmouseover="this.style.background='var(--glass)';this.style.borderColor='var(--border)'"
+      onmouseout="this.style.background='';this.style.borderColor='transparent'">
+      <div style="font-size:12px;font-weight:600;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.title)}</div>
+      <div style="font-size:10px;color:var(--t2)">${esc(s.project)} · ${s.created}</div>
+    </div>`).join('');
+}
+function filterScripts(q){renderScripts(q);}
+function openScript(id){
+  const sc=STATE.scripts.find(s=>s.id===id); if(!sc) return;
+  const el=document.getElementById('script-editor'); if(!el) return;
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+      <div style="flex:1">
+        <input style="font-size:16px;font-weight:800;background:transparent;border:none;outline:none;color:var(--t1);width:100%;font-family:var(--font)" value="${esc(sc.title)}" id="sc-title-${sc.id}">
+        <div style="font-size:10px;color:var(--t2);font-family:var(--mono);margin-top:2px">${esc(sc.project)} · ${sc.created}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="copyScript(${sc.id})">Копировать</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteScript(${sc.id})">Удалить</button>
+    </div>
+    <textarea class="finp" id="sc-body-${sc.id}" style="min-height:400px;line-height:1.7;font-size:13px">${esc(sc.text)}</textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-primary btn-sm" onclick="saveScript(${sc.id})">Сохранить</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportScript(${sc.id})">↓ Экспорт</button>
+    </div>`;
+}
+function copyScript(id){const sc=STATE.scripts.find(s=>s.id===id);if(sc)navigator.clipboard.writeText(sc.text).then(()=>toast('Скопировано','s'));}
+function saveScript(id){
+  const sc=STATE.scripts.find(s=>s.id===id); if(!sc) return;
+  const t=document.getElementById('sc-title-'+id); if(t) sc.title=t.value;
+  const b=document.getElementById('sc-body-'+id); if(b) sc.text=b.value;
+  save(); toast('Сохранено','s');
+}
+function deleteScript(id){STATE.scripts=STATE.scripts.filter(s=>s.id!==id);save();renderScripts();updateBadges();document.getElementById('script-editor').innerHTML=`<div style="text-align:center;padding:60px;color:var(--t3)"><div style="font-size:36px;margin-bottom:10px">≡</div><div>Выберите сценарий</div></div>`;}
+function exportScript(id){const sc=STATE.scripts.find(s=>s.id===id);if(!sc) return;const a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(sc.text);a.download='script.txt';a.click();}
+function addScriptFromAI(d){STATE.scripts.unshift({id:Date.now(),title:d.title||'AI сценарий',project:STATE.currentProject?.name||'YouTube канал',text:d.content||'',created:tstamp()});save();renderScripts();updateBadges();}
+
+/* ══════════════════════════════════════
+   IMAGES
+══════════════════════════════════════ */
+async function generateImages(){
+  const prompt=document.getElementById('img-prompt')?.value; if(!prompt){toast('Введите промт','e');return;}
+  const count=parseInt(document.getElementById('img-count')?.value||1);
+  const gallery=document.getElementById('img-gallery');
+  gallery.innerHTML=Array(count).fill(0).map(()=>`<div class="sk" style="aspect-ratio:1;border-radius:var(--rs)"></div>`).join('');
+  await sleep(2000);
+  gallery.innerHTML=Array(count).fill(0).map((_,i)=>`
+    <div class="img-card">
+      <div class="img-ph">◎</div>
+      <div class="img-card-ov">
+        <button class="btn btn-ghost btn-xs">Скачать</button>
+        <button class="btn btn-ghost btn-xs">Вариация</button>
+      </div>
+    </div>`).join('');
+  STATE.images.push({id:Date.now(),prompt,style:document.getElementById('img-style')?.value,created:tstamp()});
+  toast('Изображения готовы (mock)','s');
+}
+
+/* ══════════════════════════════════════
+   YOUTUBE
+══════════════════════════════════════ */
+async function loadYT(){
+  const stats=[
+    {lbl:'Подписчиков',val:'—'},
+    {lbl:'Просмотров/мес',val:'—'},
+    {lbl:'Средний CTR',val:'—'},
+    {lbl:'Удержание',val:'—'},
+  ];
+  const el=document.getElementById('yt-stats');
+  if(el) el.innerHTML=stats.map(s=>`<div class="stat"><div class="stat-lbl">${s.lbl}</div><div class="sk" style="height:28px;margin-top:6px"></div></div>`).join('');
+  await sleep(1800);
+  const filled=[
+    {lbl:'Подписчиков',val:'24.8K',d:'+340',c:'up'},
+    {lbl:'Просмотров/мес',val:'180K',d:'+12%',c:'up'},
+    {lbl:'Средний CTR',val:'6.4%',d:'+0.8%',c:'up'},
+    {lbl:'Удержание',val:'54%',d:'-2%',c:'dn'},
+  ];
+  if(el) el.innerHTML=filled.map(s=>`<div class="stat"><div class="stat-lbl">${s.lbl}</div><div class="stat-val">${s.val}</div><div class="stat-delta ${s.c}">${s.d}</div></div>`).join('');
+  const chart=document.getElementById('yt-chart');
+  if(chart){
+    const bars=Array(14).fill(0).map(()=>rnd(30,100));
+    chart.innerHTML=`<div style="display:flex;align-items:flex-end;gap:3px;height:80px">${bars.map(b=>`<div style="flex:1;height:${b}%;background:linear-gradient(to top,var(--p),var(--pl));border-radius:2px 2px 0 0;opacity:.7;cursor:pointer;transition:opacity .2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7"></div>`).join('')}</div><div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--t3);font-family:var(--mono)"><span>−14 дн</span><span>сегодня</span></div>`;
+  }
+  const vids=document.getElementById('yt-videos');
+  if(vids){
+    const videos=[
+      {title:'Топ-10 AI инструментов 2025',views:'48K',ctr:'7.2%'},
+      {title:'Как я автоматизировал канал',views:'31K',ctr:'5.8%'},
+      {title:'ChatGPT vs Claude — честное сравнение',views:'22K',ctr:'6.1%'},
+      {title:'Заработок с нейросетями без вложений',views:'19K',ctr:'5.4%'},
+    ];
+    vids.innerHTML=videos.map(v=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:9px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:7px">
+        <div style="width:44px;height:32px;background:var(--pd);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--p);flex-shrink:0">▷</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.title)}</div>
+          <div style="font-size:10px;color:var(--t2);margin-top:2px">${v.views} · CTR ${v.ctr}</div>
+        </div>
+        <span class="pill pill-done">OK</span>
+      </div>`).join('');
+  }
+  const recs=document.getElementById('yt-recs');
+  if(recs){
+    const recList=['Публикуй в 12:00–14:00 МСК для максимального охвата','Добавь главу 00:00 — это поднимает CTR на 20%','Следующий хайп-тренд: AI-агенты для бизнеса','Оптимизируй превью: тест A/B даст +15–30% CTR'];
+    recs.innerHTML=`<div style="display:flex;flex-direction:column;gap:8px">${recList.map((r,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs)"><span style="font-size:11px;font-family:var(--mono);color:var(--pl);flex-shrink:0">${String(i+1).padStart(2,'0')}</span><span style="font-size:12px">${esc(r)}</span></div>`).join('')}</div>`;
+  }
+}
+
+/* ══════════════════════════════════════
+   MUSIC
+══════════════════════════════════════ */
+function renderMusicPage(){
+  const ms=document.getElementById('music-stats'); if(!ms) return;
+  ms.innerHTML=`
+    <div class="card card-p" style="margin-bottom:12px">
+      <div style="font-size:12px;color:var(--t2);margin-bottom:10px">Статистика треков</div>
+      <div class="g2" style="gap:10px">
+        <div><div class="stat-lbl">Треков</div><div class="stat-val">12</div></div>
+        <div><div class="stat-lbl">Стримов</div><div class="stat-val">4.2K</div></div>
+        <div><div class="stat-lbl">Ср. прослуш.</div><div class="stat-val">2:34</div></div>
+        <div><div class="stat-lbl">Рост</div><div class="stat-val up">+18%</div></div>
+      </div>
+    </div>`;
+  const mi=document.getElementById('music-ideas'); if(!mi) return;
+  const ideas=['Коллаб с rap-исполнителями в твоей нише','Выпусти instrumental-версию для Creator Kit','Добавь трек в TikTok Audio Library для вирального охвата','Снять behind-the-scenes ролик о создании трека'];
+  mi.innerHTML=ideas.map(i=>`<div style="padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:7px;font-size:12px">${esc(i)}</div>`).join('');
+}
+async function analyzeMusic(){
+  const text=document.getElementById('music-input')?.value; if(!text){toast('Введите текст','e');return;}
+  toast('Анализирую...','i');
+  await sleep(1500);
+  toast('Анализ готов: 87/100 по вовлечённости','s');
+}
+
+/* ══════════════════════════════════════
+   FINANCES
+══════════════════════════════════════ */
+function renderFinances(){
+  const fs=document.getElementById('finance-stats'); if(!fs) return;
+  const income=STATE.finances.filter(f=>f.type==='income').reduce((a,f)=>a+f.amount,0);
+  const expense=STATE.finances.filter(f=>f.type==='expense').reduce((a,f)=>a+f.amount,0);
+  fs.innerHTML=[
+    {lbl:'Доходы',val:fmt_rub(income),c:'up'},
+    {lbl:'Расходы',val:fmt_rub(expense),c:'dn'},
+    {lbl:'Баланс',val:fmt_rub(income-expense),c:income>expense?'up':'dn'},
+    {lbl:'Транзакций',val:STATE.finances.length,c:'ne'},
+  ].map(s=>`<div class="stat"><div class="stat-lbl">${s.lbl}</div><div class="stat-val ${s.c}">${s.val}</div></div>`).join('');
+  const fh=document.getElementById('finance-history'); if(!fh) return;
+  fh.innerHTML=STATE.finances.map(f=>`
+    <div class="fin-entry">
+      <div class="fin-icon" style="background:${f.type==='income'?'var(--gd)':'var(--rd)'}">${f.type==='income'?'↑':'↓'}</div>
+      <div>
+        <div class="fin-desc">${esc(f.desc)}</div>
+        <div class="fin-cat">${esc(f.cat)} · ${f.date}</div>
+      </div>
+      <div class="fin-amount ${f.type==='income'?'fin-income-amt':'fin-expense-amt'}">${f.type==='income'?'+':'−'}${fmt_rub(f.amount)}</div>
+    </div>`).join('');
+  const fa=document.getElementById('finance-ai'); if(!fa) return;
+  const savings=income-expense;
+  fa.innerHTML=`
+    <div class="card card-p">
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px">📊 AI Анализ</div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.7">
+        <p>Основной доход: <strong style="color:var(--t1)">YouTube + Фриланс</strong></p>
+        <p style="margin-top:6px">Сэкономлено: <strong style="color:${savings>0?'var(--green)':'var(--red)'}">${fmt_rub(savings)}</strong></p>
+        <p style="margin-top:10px;color:var(--t3);font-size:11px">Рекомендация: оптимизируй подписки (-30%) и добавь источник дохода через спонсорство канала (потенциал +40%)</p>
+      </div>
+    </div>`;
+}
+function openModalExpense(){
+  document.getElementById('fin-type').value='expense';
+  openModal('modal-finance');
+}
+function addFinance(){
+  const type=document.getElementById('fin-type').value;
+  const amount=parseFloat(document.getElementById('fin-amount').value)||0; if(!amount) return;
+  const desc=document.getElementById('fin-desc').value||'Без описания';
+  const cat=document.getElementById('fin-cat').value;
+  STATE.finances.unshift({id:Date.now(),type,amount,desc,cat,date:new Date().toLocaleDateString('ru')});
+  save(); renderFinances(); renderDashboard();
+  closeModal('modal-finance');
+  document.getElementById('fin-amount').value=''; document.getElementById('fin-desc').value='';
+  toast((type==='income'?'Доход':'Расход')+' добавлен','s');
+}
+
+/* ══════════════════════════════════════
+   HABITS
+══════════════════════════════════════ */
+function renderHabits(){
+  const el=document.getElementById('habits-list'); if(!el) return;
+  el.innerHTML=STATE.habits.map(h=>`
+    <div class="habit-item" style="margin-bottom:8px">
+      <div style="width:30px;height:30px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${h.icon}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${esc(h.name)}</div>
+        <div style="font-size:10px;color:var(--orange)">🔥 Стрик: ${h.streak} дней</div>
+      </div>
+      <div class="habit-dots" style="margin-right:10px">${h.history.slice(-7).map(d=>`<div class="h-dot ${d?'h-done':'h-miss'}"></div>`).join('')}</div>
+      <button class="btn btn-xs ${h.today?'btn-success':'btn-ghost'}" onclick="completeHabit(${h.id})">${h.today?'✓ Выполнено':'Отметить'}</button>
+    </div>`).join('');
+  const hs=document.getElementById('habits-stats'); if(!hs) return;
+  const completed=STATE.habits.filter(h=>h.today).length;
+  const totalStreak=STATE.habits.reduce((a,h)=>a+h.streak,0);
+  hs.innerHTML=`
+    <div class="stat" style="margin-bottom:12px"><div class="stat-lbl">Выполнено сегодня</div><div class="stat-val">${completed}/${STATE.habits.length}</div></div>
+    <div class="stat" style="margin-bottom:12px"><div class="stat-lbl">Суммарный стрик</div><div class="stat-val">${totalStreak} дн</div></div>
+    <div class="progress" style="height:6px;margin-top:10px">
+      <div class="progress-bar" style="width:${STATE.habits.length?completed/STATE.habits.length*100:0}%;background:var(--green)"></div>
+    </div>
+    <div style="font-size:10px;color:var(--t2);margin-top:6px">${Math.round(STATE.habits.length?completed/STATE.habits.length*100:0)}% выполнено</div>`;
+}
+function completeHabit(id){
+  const h=STATE.habits.find(x=>x.id===id); if(!h) return;
+  h.today=!h.today;
+  if(h.today){h.streak++;h.history.push(1);}
+  else{h.streak=Math.max(0,h.streak-1);h.history.push(0);}
+  save(); renderHabits(); renderDashboard();
+  toast(h.today?'Привычка выполнена! 🔥':'Отмечено','s');
+}
+function addHabit(){
+  const name=document.getElementById('habit-title').value.trim(); if(!name) return;
+  STATE.habits.push({id:Date.now(),name,icon:document.getElementById('habit-icon').value||'✓',streak:0,today:false,history:[]});
+  save(); renderHabits(); renderDashboard();
+  closeModal('modal-new-habit'); document.getElementById('habit-title').value='';
+  toast('Привычка добавлена','s');
+}
+
+/* ══════════════════════════════════════
+   CMD PALETTE
+══════════════════════════════════════ */
+const CMDS=[
+  {ic:'⬡',lb:'Dashboard',       sub:'Главный экран',          fn:()=>goPage('dashboard')},
+  {ic:'◫',lb:'Проекты',         sub:'Все проекты',             fn:()=>goPage('projects')},
+  {ic:'◻',lb:'Чат с AI',        sub:'Открыть чат',             fn:()=>goPage('chat')},
+  {ic:'☑',lb:'Задачи',          sub:'Список задач',            fn:()=>goPage('tasks')},
+  {ic:'◈',lb:'Агенты',          sub:'AI агенты',               fn:()=>goPage('agents')},
+  {ic:'▷',lb:'YouTube',         sub:'Аналитика',               fn:()=>goPage('youtube')},
+  {ic:'≡',lb:'Сценарии',        sub:'Генерация',               fn:()=>goPage('scripts')},
+  {ic:'◎',lb:'Изображения',     sub:'Галерея',                 fn:()=>goPage('images')},
+  {ic:'♫',lb:'Музыка',          sub:'Аналитика треков',        fn:()=>goPage('music')},
+  {ic:'💰',lb:'Деньги',         sub:'Финансы',                 fn:()=>goPage('finances')},
+  {ic:'↺',lb:'Привычки',        sub:'Трекер',                  fn:()=>goPage('habits')},
+  {ic:'+',lb:'Новая задача',    sub:'',                        fn:()=>openModal('modal-new-task')},
+  {ic:'+',lb:'Новый проект',    sub:'',                        fn:()=>openModal('modal-new-project')},
+  {ic:'+',lb:'Добавить доход',  sub:'',                        fn:()=>{document.getElementById('fin-type').value='income';openModal('modal-finance');}},
+  {ic:'↺',lb:'Обновить агентов',sub:'',                        fn:refreshAgents},
+  {ic:'✕',lb:'Очистить чат',   sub:'',                        fn:clearChat},
+];
+let cmdFiltered=[...CMDS],cmdSel=0;
+function buildCmd(){renderCmdList();}
+function openCmd(){
+  document.getElementById('cmd-palette').classList.add('open');
+  const inp=document.getElementById('cmd-inp'); inp.value=''; cmdFiltered=[...CMDS]; cmdSel=0; renderCmdList();
+  setTimeout(()=>inp.focus(),30);
+}
+function closeCmd(){document.getElementById('cmd-palette').classList.remove('open');}
+function filterCmd(q){cmdFiltered=CMDS.filter(c=>c.lb.toLowerCase().includes(q.toLowerCase())||c.sub.toLowerCase().includes(q.toLowerCase()));cmdSel=0;renderCmdList();}
+function cmdKey(e){
+  if(e.key==='ArrowDown'){cmdSel=Math.min(cmdSel+1,cmdFiltered.length-1);renderCmdList();}
+  else if(e.key==='ArrowUp'){cmdSel=Math.max(cmdSel-1,0);renderCmdList();}
+  else if(e.key==='Enter'){execCmd(cmdSel);}
+  else if(e.key==='Escape'){closeCmd();}
+}
+function execCmd(i){closeCmd();cmdFiltered[i]?.fn?.();}
+function renderCmdList(){
+  const el=document.getElementById('cmd-list'); if(!el) return;
+  el.innerHTML=`<div class="cmd-section">Действия</div>`+
+    cmdFiltered.map((c,i)=>`
+      <div class="cmd-item ${i===cmdSel?'sel':''}" onclick="execCmd(${i})">
+        <div class="cmd-item-ic">${c.ic}</div>
+        <div style="flex:1"><div>${c.lb}</div>${c.sub?`<div class="cmd-item-sub">${c.sub}</div>`:''}</div>
+      </div>`).join('');
+}
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();openCmd();}
+  if(e.key==='Escape')closeCmd();
+});
+
+/* ══════════════════════════════════════
+   MODALS
+══════════════════════════════════════ */
+function openModal(id){
+  document.getElementById(id)?.classList.add('open');
+  if(id==='modal-projects') renderProjSwitcher();
+}
+function closeModal(id){document.getElementById(id)?.classList.remove('open');}
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+function toast(msg,type='i'){
+  const c=document.getElementById('toasts');
+  const t=document.createElement('div'); t.className='toast '+type;
+  t.innerHTML=`<span class="t-dot"></span>${esc(msg)}<span class="t-x" onclick="this.parentElement.remove()">✕</span>`;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .25s';setTimeout(()=>t.remove(),250);},3000);
+}
+
+/* ══════════════════════════════════════
+   BADGES + UTILS
+══════════════════════════════════════ */
+function updateBadges(){
+  const taskOpen=STATE.tasks.filter(t=>!t.done).length;
+  const el=document.getElementById('task-badge'); if(el) el.textContent=taskOpen;
+  const sb=document.getElementById('script-badge'); if(sb) sb.textContent=STATE.scripts.length;
+  renderDashStats();
+}
+function formatMsg(text){
+  return esc(text)
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`([^`]+)`/g,'<code style="background:var(--bg3);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:11px">$1</code>')
+    .replace(/\n/g,'<br>');
+}
+function fmt_rub(n){return new Intl.NumberFormat('ru',{style:'currency',currency:'RUB',maximumFractionDigits:0}).format(n);}
+function formatDate(d){return new Date(d).toLocaleDateString('ru',{day:'numeric',month:'short'});}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function rnd(a,b){return Math.floor(Math.random()*(b-a)+a);}
+function tstamp(){return new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});}
+</script>
+</body>
+</html>
