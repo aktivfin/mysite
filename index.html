@@ -621,6 +621,18 @@ select.finp { cursor:pointer }
 .img-card:hover .img-card-ov { opacity:1 }
 .img-ph { color:var(--t3); font-size:28px }
 
+/* Cockpit */
+.cockpit-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px }
+.cockpit-tab { padding:7px 11px; border-radius:999px; border:1px solid var(--border); background:var(--glass); font-size:11px; color:var(--t2); cursor:pointer }
+.cockpit-tab.active { background:var(--pd); border-color:rgba(124,92,255,.35); color:var(--t1) }
+.pipeline-wrap { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px }
+.pipeline-stage { padding:12px; border:1px solid var(--border); border-radius:var(--rs); background:var(--bg2) }
+.pipeline-stage.locked { opacity:.45 }
+.pipeline-items { margin-top:8px; display:flex; flex-direction:column; gap:6px; max-height:170px; overflow:auto }
+.pipe-item { padding:8px; border:1px solid var(--border); border-radius:var(--rs); background:var(--bg1); font-size:11px; cursor:pointer }
+.pipe-item.sel { border-color:rgba(124,92,255,.45); background:var(--pd) }
+.pipe-actions { display:flex; gap:6px; margin-top:8px }
+
 /* ═══════════════════════════════════════
    CMD PALETTE
 ═══════════════════════════════════════ */
@@ -771,57 +783,19 @@ input[type=file] { display:none }
 
   <div class="sidebar-nav">
     <div class="nav-group">
-      <div class="nav-label">Обзор</div>
-      <div class="nav-item active" data-page="dashboard" onclick="goPage('dashboard',this)">
-        <span class="nav-icon">⬡</span>Dashboard
-      </div>
+      <div class="nav-label">Global</div>
+      <div class="nav-item active" data-page="dashboard" onclick="goPage('dashboard',this)"><span class="nav-icon">⬡</span>Dashboard</div>
+      <div class="nav-item" data-page="inbox" onclick="goPage('inbox',this)"><span class="nav-icon">✉</span>Inbox</div>
+      <div class="nav-item" data-page="automations" onclick="goPage('automations',this)"><span class="nav-icon">⚙</span>Automations</div>
+      <div class="nav-item" data-page="settings" onclick="goPage('settings',this)"><span class="nav-icon">☰</span>Settings</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Projects</div>
       <div class="nav-item" data-page="projects" onclick="goPage('projects',this)">
-        <span class="nav-icon">◫</span>Проекты
+        <span class="nav-icon">◫</span>All Projects
         <span class="nav-badge nb-p" id="proj-cnt">0</span>
       </div>
-    </div>
-
-    <div class="nav-group">
-      <div class="nav-label">Работа</div>
-      <div class="nav-item" data-page="chat" onclick="goPage('chat',this)">
-        <span class="nav-icon">◻</span>Чат с AI
-        <span class="nav-badge nb-p" id="chat-badge" hidden>0</span>
-      </div>
-      <div class="nav-item" data-page="tasks" onclick="goPage('tasks',this)">
-        <span class="nav-icon">☑</span>Задачи
-        <span class="nav-badge nb-o" id="task-badge">0</span>
-      </div>
-      <div class="nav-item" data-page="agents" onclick="goPage('agents',this)">
-        <span class="nav-icon">◈</span>Агенты
-        <span class="nav-badge nb-g" id="agent-badge">8</span>
-      </div>
-    </div>
-
-    <div class="nav-group">
-      <div class="nav-label">Контент</div>
-      <div class="nav-item" data-page="youtube" onclick="goPage('youtube',this)">
-        <span class="nav-icon">▷</span>YouTube
-      </div>
-      <div class="nav-item" data-page="scripts" onclick="goPage('scripts',this)">
-        <span class="nav-icon">≡</span>Сценарии
-        <span class="nav-badge nb-p" id="script-badge">0</span>
-      </div>
-      <div class="nav-item" data-page="images" onclick="goPage('images',this)">
-        <span class="nav-icon">◎</span>Изображения
-      </div>
-      <div class="nav-item" data-page="music" onclick="goPage('music',this)">
-        <span class="nav-icon">♫</span>Музыка
-      </div>
-    </div>
-
-    <div class="nav-group">
-      <div class="nav-label">Жизнь</div>
-      <div class="nav-item" data-page="finances" onclick="goPage('finances',this)">
-        <span class="nav-icon">◈</span>Деньги
-      </div>
-      <div class="nav-item" data-page="habits" onclick="goPage('habits',this)">
-        <span class="nav-icon">↺</span>Привычки
-      </div>
+      <div id="sidebar-project-list"></div>
     </div>
   </div>
 
@@ -915,6 +889,36 @@ input[type=file] { display:none }
   </div>
   <div class="scroll-body">
     <div class="proj-grid" id="projects-grid"></div>
+  </div>
+</div>
+
+<!-- ════ INBOX ════ -->
+<div class="panel" id="page-inbox">
+  <div class="topbar"><div class="tb-title">Inbox</div></div>
+  <div class="scroll-body"><div class="card card-p">Системные входящие и уведомления проекта.</div></div>
+</div>
+
+<!-- ════ AUTOMATIONS ════ -->
+<div class="panel" id="page-automations">
+  <div class="topbar"><div class="tb-title">Automations</div></div>
+  <div class="scroll-body"><div class="card card-p">Автоправила и триггеры OpenClaw.</div></div>
+</div>
+
+<!-- ════ SETTINGS ════ -->
+<div class="panel" id="page-settings">
+  <div class="topbar"><div class="tb-title">Settings</div></div>
+  <div class="scroll-body"><div class="card card-p">Настройки подключения, модулей и профиля.</div></div>
+</div>
+
+<!-- ════ PROJECT COCKPIT ════ -->
+<div class="panel" id="page-cockpit">
+  <div class="topbar">
+    <div class="tb-title" id="cockpit-title">Project Cockpit</div>
+    <div class="tb-actions"><button class="btn btn-primary btn-sm" onclick="goPage('chat')">Primary: Chat</button></div>
+  </div>
+  <div class="scroll-body">
+    <div class="cockpit-tabs" id="cockpit-tabs"></div>
+    <div id="cockpit-content"></div>
   </div>
 </div>
 
@@ -1312,6 +1316,7 @@ let STATE = {
   images: [],
   messages: [],
   agents: [],
+  pipelineStages: ['Idea','Script','Images','User Selection','Scene Split','Animation Prompts','Output'],
   currentProject: null,
   ws: null,
   attachedFile: null,
@@ -1608,6 +1613,7 @@ async function init() {
   await initSupabase();
   load(); // localStorage baseline (instant)
   seedIfEmpty();
+  normalizeProjects();
   if (sb) {
     // silently sync from Supabase in background
     Promise.all([
@@ -1631,17 +1637,18 @@ async function init() {
   // render immediately from local
   initAgents(); renderDashboard(); renderProjects(); renderTasks();
   renderAgents(); renderScripts(); renderHabits(); renderFinances();
-  renderYT(); buildCmd(); addWelcome(); connectWS(); initDrop();
-  updateBadges(); updateDashDate(); initRouter();
+  renderSidebarProjects(); renderCockpitTabs(); renderCockpit();
+  loadYT(); buildCmd(); addWelcome(); connectWS(); initDrop();
+  updateBadges(); updateDashDate(); switchProject(STATE.currentProject?.id || STATE.projects[0]?.id, false); initRouter();
   setInterval(updateDashDate, 60000);
 }
 
 function seedIfEmpty() {
   if(!STATE.projects.length) {
     STATE.projects = [
-      {id:1,name:'YouTube канал',type:'YouTube',icon:'🎬',color:'#7C5CFF',tasks:0,scripts:0},
-      {id:2,name:'Музыка',type:'Музыка',icon:'🎵',color:'#1ABC9C',tasks:0,scripts:0},
-      {id:3,name:'Личные задачи',type:'Жизнь',icon:'🌱',color:'#2ECC71',tasks:0,scripts:0},
+      {id:1,name:'YouTube канал',type:'YouTube',icon:'🎬',color:'#7C5CFF',tasks:0,scripts:0,modules:{pipeline:true,analytics:true,finance:true,tasks:true},pipeline:{}},
+      {id:2,name:'Музыка',type:'Музыка',icon:'🎵',color:'#1ABC9C',tasks:0,scripts:0,modules:{pipeline:true,analytics:true,finance:false,tasks:true},pipeline:{}},
+      {id:3,name:'Личные задачи',type:'Жизнь',icon:'🌱',color:'#2ECC71',tasks:0,scripts:0,modules:{pipeline:false,analytics:false,finance:true,tasks:true},pipeline:{}},
     ];
     STATE.currentProject = STATE.projects[0];
   } else {
@@ -1675,8 +1682,23 @@ function seedIfEmpty() {
 /* ══════════════════════════════════════
    NAVIGATION
 ══════════════════════════════════════ */
+function normalizeProjects() {
+  STATE.projects = STATE.projects.map(p => ({
+    modules: { pipeline:false, analytics:false, finance:false, tasks:true, ...(p.modules || {}) },
+    pipeline: p.pipeline || {},
+    running: !!p.running,
+    ...p
+  }));
+  if (!STATE.currentProject || !STATE.projects.find(p => String(p.id) === String(STATE.currentProject.id))) {
+    STATE.currentProject = STATE.projects[0] || null;
+  }
+}
+function projectTasks(projectName){ return STATE.tasks.filter(t => t.project === projectName); }
+function projectScripts(projectName){ return STATE.scripts.filter(s => s.project === projectName); }
+
 let currentPage = 'dashboard';
 function goPage(page, el) {
+  if (!document.getElementById('page-' + page)) page = 'dashboard';
   if (window.location.hash !== '#/' + page) history.replaceState(null,'','#/'+page);
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -1696,6 +1718,7 @@ function goPage(page, el) {
   if(page==='finances') renderFinances();
   if(page==='youtube') loadYT();
   if(page==='music') renderMusicPage();
+  if(page==='cockpit') renderCockpit();
   if(window.innerWidth<768) toggleSidebar(false);
 }
 
@@ -1869,23 +1892,28 @@ function renderDashFinance() {
    PROJECTS
 ══════════════════════════════════════ */
 const PROJ_COLORS = ['#7C5CFF','#1ABC9C','#2ECC71','#F39C12','#E74C3C','#3498DB','#E91E8C'];
+let cockpitTab = 'Overview';
+function renderSidebarProjects() {
+  const el = document.getElementById('sidebar-project-list'); if(!el) return;
+  el.innerHTML = STATE.projects.map(p => `
+    <div class="nav-item ${STATE.currentProject?.id===p.id&&currentPage==='cockpit'?'active':''}" data-project-id="${p.id}" onclick="switchProject(${p.id}, true)">
+      <span class="nav-icon">${p.icon}</span>${esc(p.name)}
+    </div>`).join('');
+}
 function renderProjects() {
   const el = document.getElementById('projects-grid'); if(!el) return;
   document.getElementById('proj-cnt').textContent = STATE.projects.length;
   el.innerHTML = STATE.projects.map(p=>`
-    <div class="proj-card" onclick="switchProject(${p.id})">
+    <div class="proj-card" onclick="switchProject(${p.id}, true)">
       <div class="proj-card-glow" style="background:${p.color}"></div>
       <div class="proj-card-mark" style="background:${p.color}22;font-size:16px">${p.icon}</div>
       <div class="proj-card-name">${esc(p.name)}</div>
       <div class="proj-card-type">${esc(p.type)}</div>
       <div class="proj-card-stats">
-        <span>☑ ${STATE.tasks.filter(t=>t.project===p.name&&!t.done).length} задач</span>
-        <span>≡ ${STATE.scripts.filter(s=>s.project===p.name).length} сценариев</span>
+        <span>☑ ${projectTasks(p.name).filter(t=>!t.done).length} задач</span>
+        <span>≡ ${projectScripts(p.name).length} сценариев</span>
       </div>
-      <div class="proj-card-foot">
-        <span class="pill pill-idle">${p.type}</span>
-        <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();switchProject(${p.id});goPage('chat')">Открыть чат →</button>
-      </div>
+      <div class="proj-card-foot"><span class="pill pill-idle">${p.type}</span></div>
     </div>`).join('')
   + `<div class="proj-card" style="border-style:dashed;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:180px;color:var(--t3)" onclick="openModal('modal-new-project')">
       <div style="text-align:center">
@@ -1894,23 +1922,27 @@ function renderProjects() {
       </div>
     </div>`;
   renderProjSwitcher();
+  renderSidebarProjects();
 }
 function renderProjSwitcher() {
   const el = document.getElementById('proj-switcher-list'); if(!el) return;
   el.innerHTML = STATE.projects.map(p=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--rs);cursor:pointer;transition:background .14s;${STATE.currentProject?.id===p.id?'background:var(--pd)':''}" onclick="switchProject(${p.id});closeModal('modal-projects')">
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--rs);cursor:pointer;transition:background .14s;${STATE.currentProject?.id===p.id?'background:var(--pd)':''}" onclick="switchProject(${p.id}, false);closeModal('modal-projects')">
       <div style="width:28px;height:28px;border-radius:7px;background:${p.color}22;display:flex;align-items:center;justify-content:center;font-size:14px">${p.icon}</div>
       <div style="flex:1"><div style="font-size:13px;font-weight:600">${esc(p.name)}</div><div style="font-size:10px;color:var(--t2)">${p.type}</div></div>
       ${STATE.currentProject?.id===p.id?'<span style="color:var(--p);font-size:14px">✓</span>':''}
     </div>`).join('');
 }
-function switchProject(id) {
+function switchProject(id, openCockpit=false) {
   const p = STATE.projects.find(x=>x.id===id); if(!p) return;
   STATE.currentProject = p;
   document.getElementById('sb-proj-ic').textContent = p.icon;
   document.getElementById('sb-proj-ic').style.background = p.color+'22';
   document.getElementById('sb-proj-name').textContent = p.name;
   document.getElementById('chat-proj-tag').textContent = p.name;
+  renderSidebarProjects();
+  renderCockpit();
+  if (openCockpit) goPage('cockpit');
   toast('Проект: '+p.name,'i');
 }
 async function addProject() {
@@ -1918,11 +1950,74 @@ async function addProject() {
   const type = document.getElementById('proj-type').value;
   const icon = document.getElementById('proj-icon').value;
   const color = PROJ_COLORS[STATE.projects.length % PROJ_COLORS.length];
-  await DB.upsertProject({ name, type, icon, color });
+  await DB.upsertProject({ name, type, icon, color, modules:{pipeline:true,analytics:true,finance:false,tasks:true}, pipeline:{} });
+  normalizeProjects();
   renderProjects();
   closeModal('modal-new-project');
   document.getElementById('proj-title').value = '';
   toast('Проект "' + name + '" создан', 's');
+}
+
+function ensurePipeline(project) {
+  if (!project.pipeline) project.pipeline = {};
+  STATE.pipelineStages.forEach(stage => {
+    if (!project.pipeline[stage]) project.pipeline[stage] = { approved:false, items:[], selected:[] };
+  });
+}
+function canGenerateStage(project, stage) {
+  const idx = STATE.pipelineStages.indexOf(stage);
+  if (idx <= 0) return true;
+  const prev = project.pipeline[STATE.pipelineStages[idx - 1]];
+  return !!(prev && prev.approved && prev.selected && prev.selected.length);
+}
+function generateStage(stage) {
+  const p = STATE.currentProject; if (!p) return;
+  ensurePipeline(p);
+  if (!canGenerateStage(p, stage)) return toast('Approve previous stage first', 'e');
+  p.pipeline[stage].items.push({ id: Date.now(), text: `${stage} item ${p.pipeline[stage].items.length + 1}` });
+  save(); renderCockpit();
+}
+function togglePipelineItem(stage, id) {
+  const st = STATE.currentProject.pipeline[stage];
+  st.selected = st.selected || [];
+  st.selected = st.selected.includes(id) ? st.selected.filter(x => x !== id) : [...st.selected, id];
+  save(); renderCockpit();
+}
+function approveStage(stage) {
+  const st = STATE.currentProject.pipeline[stage];
+  if (!st.selected?.length) return toast('Select items first', 'e');
+  st.approved = true;
+  save(); renderCockpit();
+}
+function renderCockpitTabs() {
+  const tabs = ['Overview','Pipeline','Tasks','Assets','Analytics','Finance','Chat'];
+  const el = document.getElementById('cockpit-tabs'); if (!el) return;
+  el.innerHTML = tabs.map(t => `<button class="cockpit-tab ${cockpitTab===t?'active':''}" onclick="cockpitTab='${t}';renderCockpitTabs();renderCockpit()">${t}</button>`).join('');
+}
+function renderCockpit() {
+  const p = STATE.currentProject;
+  const el = document.getElementById('cockpit-content');
+  if (!p || !el) return;
+  ensurePipeline(p);
+  document.getElementById('cockpit-title').textContent = `${p.name} · Cockpit`;
+  if (cockpitTab === 'Overview') {
+    el.innerHTML = `<div class="g3"><div class="stat"><div class="stat-lbl">Tasks</div><div class="stat-val">${projectTasks(p.name).filter(t=>!t.done).length}</div></div><div class="stat"><div class="stat-lbl">Scripts</div><div class="stat-val">${projectScripts(p.name).length}</div></div><div class="stat"><div class="stat-lbl">OpenClaw</div><div class="stat-val">${STATE.ws&&STATE.ws.readyState===1?'Connected':'Disconnected'}</div></div></div>`;
+  } else if (cockpitTab === 'Pipeline') {
+    el.innerHTML = `<div class="pipeline-wrap">${STATE.pipelineStages.map(stage => {
+      const st = p.pipeline[stage]; const locked = !canGenerateStage(p, stage);
+      return `<div class="pipeline-stage ${locked?'locked':''}"><div style="display:flex;justify-content:space-between;gap:8px"><strong style="font-size:12px">${stage}</strong><span class="pill ${st.approved?'pill-done':'pill-idle'}">${st.approved?'approved':'pending'}</span></div><div class="pipeline-items">${st.items.map(i => `<div class="pipe-item ${st.selected?.includes(i.id)?'sel':''}" onclick="togglePipelineItem('${stage}',${i.id})">${esc(i.text)}</div>`).join('') || '<div style="font-size:10px;color:var(--t3)">No items</div>'}</div><div class="pipe-actions"><button class="btn btn-ghost btn-xs" onclick="generateStage('${stage}')">Generate</button><button class="btn btn-primary btn-xs" onclick="approveStage('${stage}')">Approve</button></div></div>`;
+    }).join('')}</div>`;
+  } else if (cockpitTab === 'Tasks') {
+    el.innerHTML = projectTasks(p.name).map(t => `<div class="task-item"><div class="task-prio prio-${t.prio}"></div><div class="task-title">${esc(t.title)}</div></div>`).join('') || '<div class="card card-p">No tasks</div>';
+  } else if (cockpitTab === 'Assets') {
+    el.innerHTML = `<div class="card card-p">Assets: ${STATE.images.length}</div>`;
+  } else if (cockpitTab === 'Analytics') {
+    el.innerHTML = `<div class="card card-p">${p.modules.analytics ? 'Analytics module enabled.' : 'Analytics disabled for this project.'}</div>`;
+  } else if (cockpitTab === 'Finance') {
+    el.innerHTML = `<div class="card card-p">${p.modules.finance ? 'Finance module enabled.' : 'Finance disabled for this project.'}</div>`;
+  } else if (cockpitTab === 'Chat') {
+    goPage('chat');
+  }
 }
 
 /* ══════════════════════════════════════
@@ -2162,8 +2257,10 @@ async function sendChatMsg(){
     showTyping();
     await sleep(900+rnd(200,700));
     hideTyping();
+    const intent = detectIntent(text);
     const reply=generateReply(text,img);
-    addAIMsg(reply,classifyMsg(text));
+    addAIMsg(reply,intent.type);
+    routeIntent(intent, text, reply);
     document.getElementById('chat-status-lbl').textContent='Готов к работе';
     // Auto-save
     if(/сценари|shorts|видео/i.test(text)) {
@@ -2175,6 +2272,27 @@ async function sendChatMsg(){
     }
   }
   save();
+}
+function detectIntent(text){
+  const t=(text||'').toLowerCase();
+  if(/create scenario|создай сценар|сценари|shorts/.test(t)) return {type:'script',route:'pipeline-script'};
+  if(/задач|todo|сделай|добавь задачу/.test(t)) return {type:'task',route:'task'};
+  if(/идея|idea/.test(t)) return {type:'idea',route:'pipeline-idea'};
+  return {type:'plain',route:'chat'};
+}
+function routeIntent(intent, text, reply){
+  const p = STATE.currentProject; if(!p) return;
+  ensurePipeline(p);
+  if(intent.route==='task'){ addTaskFromText(text); return; }
+  if(intent.route==='pipeline-script'){
+    p.pipeline['Script'].items.push({id:Date.now(),text:reply.slice(0,180)});
+    save(); renderCockpit(); toast('Saved to pipeline: Script','s');
+    return;
+  }
+  if(intent.route==='pipeline-idea'){
+    p.pipeline['Idea'].items.push({id:Date.now(),text});
+    save(); renderCockpit();
+  }
 }
 function classifyMsg(text) {
   if(/сценари|shorts|скрипт|видео/i.test(text)) return 'script';
@@ -2533,7 +2651,10 @@ document.addEventListener('keydown',e=>{
 
 // ── Hash Router ────────────────────────────────────────────────
 function initRouter() {
-  const getPage = () => (window.location.hash.replace('#/', '') || 'dashboard');
+  const getPage = () => {
+    const p = (window.location.hash.replace('#/', '') || 'dashboard');
+    return document.getElementById('page-' + p) ? p : 'dashboard';
+  };
   window.addEventListener('hashchange', () => goPage(getPage()));
   const startPage = getPage();
   if (startPage !== 'dashboard') goPage(startPage);
