@@ -1280,23 +1280,26 @@ input[type=file] { display:none }
 <div id="toasts"></div>
 
 <script>
-// ── Supabase bootstrap ──────────────────────────────────────────
-const SB_URL  = '%%SUPABASE_URL%%';   // injected at deploy
-const SB_KEY  = '%%SUPABASE_ANON_KEY%%';
-const SB_READY = SB_URL.startsWith('https://') && SB_KEY.length > 20;
-const OPENCLAW_WS_URL = '%%OPENCLAW_API_BASE_URL%%'.replace('https://','wss://').replace('http://','ws://');
+// ─── CONFIG — fill before deploy ────────────────────────────────
+const SB_URL  = 'https://qccrvwxiwhjwunbkcmkd.supabase.co'; // FILL: ok
+const SB_KEY  = 'PASTE_SUPABASE_ANON_KEY_HERE';              // FILL: anon key
+const OC_WS   = 'PASTE_OPENCLAW_WS_URL_HERE';                // FILL: wss://your-vps/ws
+// ────────────────────────────────────────────────────────────────
 
-let sb = null;  // Supabase client, null until init
-let _wsRetry = 0;
+const SB_READY = SB_URL.startsWith('https://') && !SB_KEY.startsWith('PASTE');
+let sb = null;
 
 async function initSupabase() {
   if (!SB_READY) {
-    console.warn('[OpenClaw] Supabase not configured — running in local mode');
+    console.warn('[OC] Supabase not configured — local mode');
     return;
   }
-  // supabase-js loaded via CDN (added to <head>)
-  sb = supabase.createClient(SB_URL, SB_KEY);
-  console.log('[OpenClaw] Supabase connected');
+  try {
+    sb = supabase.createClient(SB_URL, SB_KEY);
+    console.log('[OC] Supabase ready');
+  } catch(e) {
+    console.error('[OC] Supabase init failed', e);
+  }
 }
 
 /* ══════════════════════════════════════
@@ -1316,6 +1319,188 @@ let STATE = {
   ws: null,
   attachedFile: null,
 };
+
+const DB = {
+
+  // PROJECTS
+  async loadProjects() {
+    if (!sb) return STATE.projects;
+    const { data, error } = await sb.from('projects').select('*').order('created_at');
+    return error ? STATE.projects : data;
+  },
+  async saveProject(p) {
+    if (!sb) return;
+    const row = { name: p.name, type: p.type, icon: p.icon, color: p.color };
+    if (p.sb_id) {
+      await sb.from('projects').update(row).eq('id', p.sb_id);
+    } else {
+      const { data } = await sb.from('projects').insert(row).select().single();
+      if (data) p.sb_id = data.id;
+    }
+  },
+
+  // TASKS
+  async loadTasks() {
+    if (!sb) return STATE.tasks;
+    const { data, error } = await sb.from('tasks').select('*').order('created_at');
+    return error ? STATE.tasks : data.map(r => ({
+      id: r.local_id || r.id, sb_id: r.id,
+      title: r.title, project: r.project_name || '',
+      prio: r.prio, deadline: r.deadline,
+      done: r.done, status: r.status,
+    }));
+  },
+  async saveTask(t) {
+    if (!sb) return;
+    const row = {
+      title: t.title, project_name: t.project,
+      prio: t.prio, deadline: t.deadline || null,
+      done: t.done, status: t.status,
+    };
+    if (t.sb_id) {
+      await sb.from('tasks').update(row).eq('id', t.sb_id);
+    } else {
+      const { data } = await sb.from('tasks').insert(row).select().single();
+      if (data) t.sb_id = data.id;
+    }
+  },
+  async deleteTask(t) {
+    if (sb && t.sb_id) await sb.from('tasks').delete().eq('id', t.sb_id);
+  },
+
+  // HABITS
+  async loadHabits() {
+    if (!sb) return STATE.habits;
+    const { data, error } = await sb.from('habits').select('*');
+    return error ? STATE.habits : data.map(r => ({
+      id: r.local_id || r.id, sb_id: r.id,
+      name: r.name, icon: r.icon,
+      streak: r.streak, today: r.today, history: r.history || [],
+    }));
+  },
+  async saveHabit(h) {
+    if (!sb) return;
+    const row = {
+      name: h.name, icon: h.icon,
+      streak: h.streak, today: h.today,
+      history: h.history, updated_at: new Date().toISOString(),
+    };
+    if (h.sb_id) {
+      await sb.from('habits').update(row).eq('id', h.sb_id);
+    } else {
+      const { data } = await sb.from('habits').insert(row).select().single();
+      if (data) h.sb_id = data.id;
+    }
+  },
+
+  // FINANCES
+  async loadFinances() {
+    if (!sb) return STATE.finances;
+    const { data, error } = await sb
+      .from('finances').select('*').order('date', { ascending: false });
+    return error ? STATE.finances : data.map(r => ({
+      id: r.local_id || r.id, sb_id: r.id,
+      type: r.type, amount: r.amount,
+      desc: r.description, cat: r.category, date: r.date,
+    }));
+  },
+  async saveFinance(f) {
+    if (!sb) return;
+    const { data } = await sb.from('finances').insert({
+      type: f.type, amount: f.amount,
+      description: f.desc, category: f.cat, date: f.date,
+    }).select().single();
+    if (data) f.sb_id = data.id;
+  },
+
+  // SCRIPTS
+  async loadScripts() {
+    if (!sb) return STATE.scripts;
+    const { data, error } = await sb.from('scripts').select('*').order('created_at');
+    return error ? STATE.scripts : data.map(r => ({
+      id: r.local_id || r.id, sb_id: r.id,
+      title: r.title, content: r.content || '',
+      project: r.project_name || '', tags: r.tags || [],
+    }));
+  },
+  async saveScript(s) {
+    if (!sb) return;
+    const row = { title: s.title, content: s.content || '', project_name: s.project, tags: s.tags || [] };
+    if (s.sb_id) {
+      await sb.from('scripts').update(row).eq('id', s.sb_id);
+    } else {
+      const { data } = await sb.from('scripts').insert(row).select().single();
+      if (data) s.sb_id = data.id;
+    }
+  },
+
+  // CHAT
+  async saveMessage(role, content, msgType) {
+    if (!sb) return;
+    await sb.from('chat_messages').insert({
+      role, content, msg_type: msgType || 'plain',
+      project_name: STATE.currentProject?.name || 'general',
+    }).catch(() => {});
+  },
+
+  // Sync all from Supabase → STATE (background, non-blocking)
+  async syncDown() {
+    if (!sb) return;
+    const [projects, tasks, habits, finances, scripts] = await Promise.all([
+      this.loadProjects(),
+      this.loadTasks(),
+      this.loadHabits(),
+      this.loadFinances(),
+      this.loadScripts(),
+    ]);
+    if (projects.length) STATE.projects = projects;
+    if (tasks.length)    STATE.tasks    = tasks;
+    if (habits.length)   STATE.habits   = habits;
+    if (finances.length) STATE.finances = finances;
+    if (scripts.length)  STATE.scripts  = scripts;
+  },
+};
+
+const AICtx = {
+  _c: {}, // projectId → { system, history[], insights[] }
+
+  ctx(pid) {
+    if (!this._c[pid]) {
+      const p = STATE.projects.find(x => String(x.id) === String(pid));
+      this._c[pid] = {
+        system: p
+          ? `Ты AI-ассистент проекта "${p.name}" (${p.type}). Помогай с задачами и контентом. Отвечай на русском.`
+          : 'Ты личный AI-ассистент OpenClaw. Отвечай на русском.',
+        history: [],
+        insights: [],
+      };
+    }
+    return this._c[pid];
+  },
+
+  push(pid, role, content) {
+    const c = this.ctx(pid);
+    c.history.push({ role, content });
+    if (c.history.length > 20) c.history.shift();
+    DB.saveMessage(role, content).catch(() => {});
+  },
+
+  payload(pid, text) {
+    const c = this.ctx(pid);
+    return {
+      type: 'chat',
+      content: text,
+      project: STATE.currentProject?.name || 'general',
+      mode: document.getElementById('chat-mode')?.value || 'auto',
+      context: {
+        system:   c.system,
+        history:  c.history.slice(-10),
+        insights: c.insights.slice(-3),
+      },
+    };
+  },
+};
+
 
 function save() {
   try {
@@ -1342,249 +1527,6 @@ function load() {
   } catch(e){}
 }
 
-const DB = {
-
-  // ── Projects ──────────────────────────────────────────────────
-  async getProjects() {
-    if (sb) {
-      try {
-        const { data, error } = await sb.from('projects').select('*').order('created_at');
-        if (!error) return data;
-      } catch (e) {}
-    }
-    return STATE.projects;
-  },
-
-  async upsertProject(project) {
-    const local = { ...project, id: project.id || Date.now() };
-    STATE.projects = STATE.projects.filter(p => p.id != local.id);
-    STATE.projects.push(local);
-    save();
-    if (sb) {
-      try {
-        await sb.from('projects').upsert({
-          id:    typeof local.id === 'number' ? undefined : local.id,
-          name:  local.name,
-          type:  local.type,
-          icon:  local.icon,
-          color: local.color,
-        });
-      } catch (e) {}
-    }
-    return local;
-  },
-
-  // ── Tasks ─────────────────────────────────────────────────────
-  async getTasks() {
-    if (sb) {
-      try {
-        const { data, error } = await sb.from('tasks').select('*').order('created_at');
-        if (!error) return data;
-      } catch (e) {}
-    }
-    return STATE.tasks;
-  },
-
-  async upsertTask(task) {
-    const local = { ...task, id: task.id || Date.now() };
-    STATE.tasks = STATE.tasks.filter(t => t.id != local.id);
-    STATE.tasks.push(local);
-    save();
-    if (sb) {
-      try {
-        await sb.from('tasks').upsert({
-          id:       typeof local.id === 'number' ? undefined : local.id,
-          title:    local.title,
-          prio:     local.prio,
-          deadline: local.deadline || null,
-          done:     local.done,
-          status:   local.status,
-          project_id: local.project_id || null,
-        });
-      } catch (e) {}
-    }
-    return local;
-  },
-
-  async deleteTask(id) {
-    STATE.tasks = STATE.tasks.filter(t => t.id != id);
-    save();
-    if (sb) {
-      try {
-        await sb.from('tasks').delete().eq('id', id);
-      } catch (e) {}
-    }
-  },
-
-  // ── Habits ────────────────────────────────────────────────────
-  async getHabits() {
-    if (sb) {
-      try {
-        const { data, error } = await sb.from('habits').select('*');
-        if (!error) return data;
-      } catch (e) {}
-    }
-    return STATE.habits;
-  },
-
-  async upsertHabit(habit) {
-    const local = { ...habit, id: habit.id || Date.now() };
-    STATE.habits = STATE.habits.filter(h => h.id != local.id);
-    STATE.habits.push(local);
-    save();
-    if (sb) {
-      try {
-        await sb.from('habits').upsert({
-          id:      typeof local.id === 'number' ? undefined : local.id,
-          name:    local.name,
-          icon:    local.icon,
-          streak:  local.streak,
-          today:   local.today,
-          history: local.history,
-          updated_at: new Date().toISOString(),
-        });
-      } catch (e) {}
-    }
-    return local;
-  },
-
-  // ── Finances ──────────────────────────────────────────────────
-  async getFinances() {
-    if (sb) {
-      try {
-        const { data, error } = await sb.from('finances').select('*').order('date', { ascending: false });
-        if (!error) return data;
-      } catch (e) {}
-    }
-    return STATE.finances;
-  },
-
-  async insertFinance(fin) {
-    const local = { ...fin, id: fin.id || Date.now() };
-    STATE.finances.unshift(local);
-    save();
-    if (sb) {
-      try {
-        await sb.from('finances').insert({
-          type:        local.type,
-          amount:      local.amount,
-          description: local.desc,
-          category:    local.cat,
-          date:        local.date,
-        });
-      } catch (e) {}
-    }
-    return local;
-  },
-
-  // ── Scripts ───────────────────────────────────────────────────
-  async getScripts() {
-    if (sb) {
-      try {
-        const { data, error } = await sb.from('scripts').select('*').order('created_at');
-        if (!error) return data;
-      } catch (e) {}
-    }
-    return STATE.scripts;
-  },
-
-  async upsertScript(script) {
-    const local = { ...script, id: script.id || Date.now() };
-    STATE.scripts = STATE.scripts.filter(s => s.id != local.id);
-    STATE.scripts.push(local);
-    save();
-    if (sb) {
-      try {
-        await sb.from('scripts').upsert({
-          id:      typeof local.id === 'number' ? undefined : local.id,
-          title:   local.title,
-          content: local.content || '',
-          tags:    local.tags || [],
-          project_id: local.project_id || null,
-        });
-      } catch (e) {}
-    }
-    return local;
-  },
-
-  // ── Chat messages ─────────────────────────────────────────────
-  async saveChatMessage(msg) {
-    if (!sb) return;
-    try {
-      await sb.from('chat_messages').insert({
-        role:     msg.role,
-        content:  msg.content,
-        msg_type: msg.msgType || 'plain',
-        project_id: msg.project_id || null,
-      });
-    } catch (e) {}
-  },
-
-  async loadChatHistory(limit = 50) {
-    if (!sb) return STATE.messages;
-    try {
-      const { data, error } = await sb
-        .from('chat_messages')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(limit);
-      if (error) return STATE.messages;
-      return data.reverse();
-    } catch (e) {
-      return STATE.messages;
-    }
-  },
-};
-
-const AICtx = {
-  _store: {},
-
-  get(projectId) {
-    if (!this._store[projectId]) this._init(projectId);
-    return this._store[projectId];
-  },
-
-  _init(projectId) {
-    const proj = STATE.projects.find(p => String(p.id) === String(projectId));
-    this._store[projectId] = {
-      systemPrompt: proj
-        ? `Ты AI-ассистент проекта "${proj.name}" (тип: ${proj.type}). ` +
-          `Помогай с задачами, контентом и анализом. Отвечай на русском.`
-        : 'Ты личный AI-ассистент. Отвечай на русском.',
-      history: [],
-      insights: [],
-    };
-  },
-
-  addMsg(projectId, role, content) {
-    const ctx = this.get(projectId);
-    ctx.history.push({ role, content });
-    if (ctx.history.length > 20) ctx.history.shift();
-    if (sb) DB.saveChatMessage({ role, content, project_id: projectId }).catch(() => {});
-  },
-
-  payload(projectId, userMsg) {
-    const ctx = this.get(projectId);
-    return {
-      type:    'chat',
-      content: userMsg,
-      project: STATE.currentProject?.name || 'general',
-      mode:    document.getElementById('chat-mode')?.value || 'auto',
-      context: {
-        system:  ctx.systemPrompt,
-        history: ctx.history.slice(-10),
-        insights: ctx.insights.slice(-3),
-      },
-    };
-  },
-
-  addInsight(projectId, text) {
-    const ctx = this.get(projectId);
-    ctx.insights.push(text);
-    if (ctx.insights.length > 10) ctx.insights.shift();
-  },
-};
-
 /* ══════════════════════════════════════
    LOGIN
 ══════════════════════════════════════ */
@@ -1605,30 +1547,17 @@ function doLogin() {
    INIT
 ══════════════════════════════════════ */
 async function init() {
+  load();
   await initSupabase();
-  load(); // localStorage baseline (instant)
-  seedIfEmpty();
   if (sb) {
-    // silently sync from Supabase in background
-    Promise.all([
-      DB.getProjects().then(d  => { if(d.length) STATE.projects  = d; }),
-      DB.getTasks().then(d     => { if(d.length) STATE.tasks     = d; }),
-      DB.getHabits().then(d    => { if(d.length) STATE.habits    = d; }),
-      DB.getFinances().then(d  => { if(d.length) STATE.finances  = d; }),
-      DB.getScripts().then(d   => { if(d.length) STATE.scripts   = d; }),
-    ]).then(() => {
-      renderDashboard();
-      renderProjects();
-      renderTasks();
-      renderHabits();
-      renderFinances();
+    DB.syncDown().then(() => {
+      renderDashboard(); renderProjects(); renderTasks();
+      renderHabits(); renderFinances(); renderScripts();
       updateBadges();
-      toast('Синхронизировано с облаком', 's');
-    }).catch(() => {
-      // silent — local data already rendered
-    });
+      toast('Синхронизировано ☁', 's');
+    }).catch(() => {});
   }
-  // render immediately from local
+  seedIfEmpty();
   initAgents(); renderDashboard(); renderProjects(); renderTasks();
   renderAgents(); renderScripts(); renderHabits(); renderFinances();
   renderYT(); buildCmd(); addWelcome(); connectWS(); initDrop();
@@ -1677,7 +1606,8 @@ function seedIfEmpty() {
 ══════════════════════════════════════ */
 let currentPage = 'dashboard';
 function goPage(page, el) {
-  if (window.location.hash !== '#/' + page) history.replaceState(null,'','#/'+page);
+  const newHash = '#/' + page;
+  if (window.location.hash !== newHash) history.replaceState(null, '', newHash);
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const panel = document.getElementById('page-'+page);
@@ -1710,26 +1640,25 @@ function toggleSidebar(force) {
 /* ══════════════════════════════════════
    WEBSOCKET (OpenClaw)
 ══════════════════════════════════════ */
+let _wsRetry = 0;
+
 function connectWS() {
   const dot = document.getElementById('ws-dot');
   const lbl = document.getElementById('ws-lbl');
-  const WS_URL = (typeof OPENCLAW_WS_URL !== 'undefined' && OPENCLAW_WS_URL)
-    ? OPENCLAW_WS_URL
-    : 'ws://127.0.0.1:18789';
   dot.className = 'ws-dot ws-connecting'; lbl.textContent = 'Подключение...';
   try {
-    STATE.ws = new WebSocket(WS_URL);
+    const wsUrl = (!OC_WS.startsWith('PASTE')) ? OC_WS : 'ws://127.0.0.1:18789';
+    STATE.ws = new WebSocket(wsUrl);
     STATE.ws.onopen = ()=>{
       _wsRetry = 0;
-      dot.className='ws-dot ws-on'; lbl.textContent=WS_URL;
+      dot.className='ws-dot ws-on'; lbl.textContent=wsUrl;
       toast('OpenClaw подключён','s');
     };
     STATE.ws.onmessage = (e)=>{ handleWSMsg(e.data); };
     STATE.ws.onclose = ()=>{
       dot.className='ws-dot ws-off'; lbl.textContent='Нет подключения';
       STATE.ws=null;
-      const delay = Math.min(2000 * Math.pow(2, _wsRetry), 30000);
-      _wsRetry++;
+      const delay = Math.min(2000 * Math.pow(2, _wsRetry++), 30000);
       setTimeout(connectWS, delay);
     };
     STATE.ws.onerror = ()=>{
@@ -1746,7 +1675,10 @@ function toggleWS() {
 function handleWSMsg(data) {
   try {
     const d = JSON.parse(data);
-    if(d.type==='message') { addAIMsg(d.content,d.msgType||'plain'); AICtx.addMsg(STATE.currentProject?.id, 'assistant', d.content); }
+    if (d.type === 'message') {
+      addAIMsg(d.content, d.msgType || 'plain');
+      AICtx.push(STATE.currentProject?.id, 'assistant', d.content);
+    }
     else if(d.type==='task') { addTaskFromAI(d); }
     else if(d.type==='script') { addScriptFromAI(d); }
   } catch(e) {
@@ -1756,7 +1688,7 @@ function handleWSMsg(data) {
 function sendToWS(text) {
   if (STATE.ws && STATE.ws.readyState === 1) {
     const pid = STATE.currentProject?.id;
-    AICtx.addMsg(pid, 'user', text);
+    AICtx.push(pid, 'user', text);
     STATE.ws.send(JSON.stringify(AICtx.payload(pid, text)));
     return true;
   }
@@ -1918,8 +1850,9 @@ async function addProject() {
   const type = document.getElementById('proj-type').value;
   const icon = document.getElementById('proj-icon').value;
   const color = PROJ_COLORS[STATE.projects.length % PROJ_COLORS.length];
-  await DB.upsertProject({ name, type, icon, color });
-  renderProjects();
+  STATE.projects.push({id:Date.now(),name,type,icon,color,tasks:0,scripts:0});
+  DB.saveProject(STATE.projects[STATE.projects.length - 1]).catch(() => {});
+  save(); renderProjects();
   closeModal('modal-new-project');
   document.getElementById('proj-title').value = '';
   toast('Проект "' + name + '" создан', 's');
@@ -1988,6 +1921,7 @@ function renderTasksKanban(el) {
 async function addTask() {
   const title = document.getElementById('task-title').value.trim(); if(!title) return;
   const task = {
+    id: Date.now(),
     title,
     project: STATE.currentProject?.name || '',
     prio:     document.getElementById('task-prio').value,
@@ -1995,8 +1929,10 @@ async function addTask() {
     done:     false,
     status:   'todo',
   };
-  await DB.upsertTask(task);
-  renderTasks(); renderDashboard(); updateBadges();
+  STATE.tasks.push(task);
+  DB.saveTask(STATE.tasks[STATE.tasks.length - 1]).catch(() => {});
+  save(); renderTasks();
+  renderDashboard(); updateBadges();
   closeModal('modal-new-task');
   document.getElementById('task-title').value = '';
   toast('Задача добавлена', 's');
@@ -2416,15 +2352,17 @@ async function addFinance() {
   const type   = document.getElementById('fin-type').value;
   const amount = parseFloat(document.getElementById('fin-amount').value) || 0;
   if(!amount) return;
-  const fin = {
+  STATE.finances.unshift({
+    id:Date.now(),
     type,
     amount,
     desc: document.getElementById('fin-desc').value || 'Без описания',
     cat:  document.getElementById('fin-cat').value,
     date: new Date().toLocaleDateString('ru'),
-  };
-  await DB.insertFinance(fin);
-  renderFinances(); renderDashboard();
+  });
+  DB.saveFinance(STATE.finances[0]).catch(() => {});
+  save(); renderFinances();
+  renderDashboard();
   closeModal('modal-finance');
   document.getElementById('fin-amount').value = '';
   document.getElementById('fin-desc').value = '';
@@ -2468,13 +2406,16 @@ function completeHabit(id){
     h.streak = Math.max(0, h.streak - 1);
     if (last !== 0) h.history.push(0);
   }
+  DB.saveHabit(h).catch(() => {});
   save(); renderHabits(); renderDashboard();
   toast(h.today?'Привычка выполнена! 🔥':'Отмечено','s');
 }
 function addHabit(){
   const name=document.getElementById('habit-title').value.trim(); if(!name) return;
   STATE.habits.push({id:Date.now(),name,icon:document.getElementById('habit-icon').value||'✓',streak:0,today:false,history:[]});
-  save(); renderHabits(); renderDashboard();
+  DB.saveHabit(STATE.habits[STATE.habits.length - 1]).catch(() => {});
+  save(); renderHabits();
+  renderDashboard();
   closeModal('modal-new-habit'); document.getElementById('habit-title').value='';
   toast('Привычка добавлена','s');
 }
@@ -2533,8 +2474,14 @@ document.addEventListener('keydown',e=>{
 
 // ── Hash Router ────────────────────────────────────────────────
 function initRouter() {
-  const getPage = () => (window.location.hash.replace('#/', '') || 'dashboard');
-  window.addEventListener('hashchange', () => goPage(getPage()));
+  const getPage = () => {
+    const h = window.location.hash.replace('#/', '').split('?')[0];
+    return h || 'dashboard';
+  };
+  window.addEventListener('hashchange', () => {
+    const page = getPage();
+    goPage(page);
+  });
   const startPage = getPage();
   if (startPage !== 'dashboard') goPage(startPage);
 }
