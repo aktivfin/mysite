@@ -715,6 +715,7 @@ select.finp { cursor:pointer }
 [hidden] { display:none !important }
 input[type=file] { display:none }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div id="ambient"></div>
@@ -1279,6 +1280,25 @@ input[type=file] { display:none }
 <div id="toasts"></div>
 
 <script>
+// ── Supabase bootstrap ──────────────────────────────────────────
+const SB_URL  = '%%SUPABASE_URL%%';   // injected at deploy
+const SB_KEY  = '%%SUPABASE_ANON_KEY%%';
+const SB_READY = SB_URL.startsWith('https://') && SB_KEY.length > 20;
+const OPENCLAW_WS_URL = '%%OPENCLAW_API_BASE_URL%%'.replace('https://','wss://').replace('http://','ws://');
+
+let sb = null;  // Supabase client, null until init
+let _wsRetry = 0;
+
+async function initSupabase() {
+  if (!SB_READY) {
+    console.warn('[OpenClaw] Supabase not configured — running in local mode');
+    return;
+  }
+  // supabase-js loaded via CDN (added to <head>)
+  sb = supabase.createClient(SB_URL, SB_KEY);
+  console.log('[OpenClaw] Supabase connected');
+}
+
 /* ══════════════════════════════════════
    STATE
 ══════════════════════════════════════ */
@@ -1322,12 +1342,255 @@ function load() {
   } catch(e){}
 }
 
+const DB = {
+
+  // ── Projects ──────────────────────────────────────────────────
+  async getProjects() {
+    if (sb) {
+      try {
+        const { data, error } = await sb.from('projects').select('*').order('created_at');
+        if (!error) return data;
+      } catch (e) {}
+    }
+    return STATE.projects;
+  },
+
+  async upsertProject(project) {
+    const local = { ...project, id: project.id || Date.now() };
+    STATE.projects = STATE.projects.filter(p => p.id != local.id);
+    STATE.projects.push(local);
+    save();
+    if (sb) {
+      try {
+        await sb.from('projects').upsert({
+          id:    typeof local.id === 'number' ? undefined : local.id,
+          name:  local.name,
+          type:  local.type,
+          icon:  local.icon,
+          color: local.color,
+        });
+      } catch (e) {}
+    }
+    return local;
+  },
+
+  // ── Tasks ─────────────────────────────────────────────────────
+  async getTasks() {
+    if (sb) {
+      try {
+        const { data, error } = await sb.from('tasks').select('*').order('created_at');
+        if (!error) return data;
+      } catch (e) {}
+    }
+    return STATE.tasks;
+  },
+
+  async upsertTask(task) {
+    const local = { ...task, id: task.id || Date.now() };
+    STATE.tasks = STATE.tasks.filter(t => t.id != local.id);
+    STATE.tasks.push(local);
+    save();
+    if (sb) {
+      try {
+        await sb.from('tasks').upsert({
+          id:       typeof local.id === 'number' ? undefined : local.id,
+          title:    local.title,
+          prio:     local.prio,
+          deadline: local.deadline || null,
+          done:     local.done,
+          status:   local.status,
+          project_id: local.project_id || null,
+        });
+      } catch (e) {}
+    }
+    return local;
+  },
+
+  async deleteTask(id) {
+    STATE.tasks = STATE.tasks.filter(t => t.id != id);
+    save();
+    if (sb) {
+      try {
+        await sb.from('tasks').delete().eq('id', id);
+      } catch (e) {}
+    }
+  },
+
+  // ── Habits ────────────────────────────────────────────────────
+  async getHabits() {
+    if (sb) {
+      try {
+        const { data, error } = await sb.from('habits').select('*');
+        if (!error) return data;
+      } catch (e) {}
+    }
+    return STATE.habits;
+  },
+
+  async upsertHabit(habit) {
+    const local = { ...habit, id: habit.id || Date.now() };
+    STATE.habits = STATE.habits.filter(h => h.id != local.id);
+    STATE.habits.push(local);
+    save();
+    if (sb) {
+      try {
+        await sb.from('habits').upsert({
+          id:      typeof local.id === 'number' ? undefined : local.id,
+          name:    local.name,
+          icon:    local.icon,
+          streak:  local.streak,
+          today:   local.today,
+          history: local.history,
+          updated_at: new Date().toISOString(),
+        });
+      } catch (e) {}
+    }
+    return local;
+  },
+
+  // ── Finances ──────────────────────────────────────────────────
+  async getFinances() {
+    if (sb) {
+      try {
+        const { data, error } = await sb.from('finances').select('*').order('date', { ascending: false });
+        if (!error) return data;
+      } catch (e) {}
+    }
+    return STATE.finances;
+  },
+
+  async insertFinance(fin) {
+    const local = { ...fin, id: fin.id || Date.now() };
+    STATE.finances.unshift(local);
+    save();
+    if (sb) {
+      try {
+        await sb.from('finances').insert({
+          type:        local.type,
+          amount:      local.amount,
+          description: local.desc,
+          category:    local.cat,
+          date:        local.date,
+        });
+      } catch (e) {}
+    }
+    return local;
+  },
+
+  // ── Scripts ───────────────────────────────────────────────────
+  async getScripts() {
+    if (sb) {
+      try {
+        const { data, error } = await sb.from('scripts').select('*').order('created_at');
+        if (!error) return data;
+      } catch (e) {}
+    }
+    return STATE.scripts;
+  },
+
+  async upsertScript(script) {
+    const local = { ...script, id: script.id || Date.now() };
+    STATE.scripts = STATE.scripts.filter(s => s.id != local.id);
+    STATE.scripts.push(local);
+    save();
+    if (sb) {
+      try {
+        await sb.from('scripts').upsert({
+          id:      typeof local.id === 'number' ? undefined : local.id,
+          title:   local.title,
+          content: local.content || '',
+          tags:    local.tags || [],
+          project_id: local.project_id || null,
+        });
+      } catch (e) {}
+    }
+    return local;
+  },
+
+  // ── Chat messages ─────────────────────────────────────────────
+  async saveChatMessage(msg) {
+    if (!sb) return;
+    try {
+      await sb.from('chat_messages').insert({
+        role:     msg.role,
+        content:  msg.content,
+        msg_type: msg.msgType || 'plain',
+        project_id: msg.project_id || null,
+      });
+    } catch (e) {}
+  },
+
+  async loadChatHistory(limit = 50) {
+    if (!sb) return STATE.messages;
+    try {
+      const { data, error } = await sb
+        .from('chat_messages')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error) return STATE.messages;
+      return data.reverse();
+    } catch (e) {
+      return STATE.messages;
+    }
+  },
+};
+
+const AICtx = {
+  _store: {},
+
+  get(projectId) {
+    if (!this._store[projectId]) this._init(projectId);
+    return this._store[projectId];
+  },
+
+  _init(projectId) {
+    const proj = STATE.projects.find(p => String(p.id) === String(projectId));
+    this._store[projectId] = {
+      systemPrompt: proj
+        ? `Ты AI-ассистент проекта "${proj.name}" (тип: ${proj.type}). ` +
+          `Помогай с задачами, контентом и анализом. Отвечай на русском.`
+        : 'Ты личный AI-ассистент. Отвечай на русском.',
+      history: [],
+      insights: [],
+    };
+  },
+
+  addMsg(projectId, role, content) {
+    const ctx = this.get(projectId);
+    ctx.history.push({ role, content });
+    if (ctx.history.length > 20) ctx.history.shift();
+    if (sb) DB.saveChatMessage({ role, content, project_id: projectId }).catch(() => {});
+  },
+
+  payload(projectId, userMsg) {
+    const ctx = this.get(projectId);
+    return {
+      type:    'chat',
+      content: userMsg,
+      project: STATE.currentProject?.name || 'general',
+      mode:    document.getElementById('chat-mode')?.value || 'auto',
+      context: {
+        system:  ctx.systemPrompt,
+        history: ctx.history.slice(-10),
+        insights: ctx.insights.slice(-3),
+      },
+    };
+  },
+
+  addInsight(projectId, text) {
+    const ctx = this.get(projectId);
+    ctx.insights.push(text);
+    if (ctx.insights.length > 10) ctx.insights.shift();
+  },
+};
+
 /* ══════════════════════════════════════
    LOGIN
 ══════════════════════════════════════ */
 function doLogin() {
   const v = document.getElementById('pin').value;
-  if(v === PASS || v === '') {
+  if(v === PASS) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').className = 'on';
     init();
@@ -1341,24 +1604,35 @@ function doLogin() {
 /* ══════════════════════════════════════
    INIT
 ══════════════════════════════════════ */
-function init() {
-  load();
+async function init() {
+  await initSupabase();
+  load(); // localStorage baseline (instant)
   seedIfEmpty();
-  initAgents();
-  renderDashboard();
-  renderProjects();
-  renderTasks();
-  renderAgents();
-  renderScripts();
-  renderHabits();
-  renderFinances();
-  renderYT();
-  buildCmd();
-  addWelcome();
-  connectWS();
-  initDrop();
-  updateBadges();
-  updateDashDate();
+  if (sb) {
+    // silently sync from Supabase in background
+    Promise.all([
+      DB.getProjects().then(d  => { if(d.length) STATE.projects  = d; }),
+      DB.getTasks().then(d     => { if(d.length) STATE.tasks     = d; }),
+      DB.getHabits().then(d    => { if(d.length) STATE.habits    = d; }),
+      DB.getFinances().then(d  => { if(d.length) STATE.finances  = d; }),
+      DB.getScripts().then(d   => { if(d.length) STATE.scripts   = d; }),
+    ]).then(() => {
+      renderDashboard();
+      renderProjects();
+      renderTasks();
+      renderHabits();
+      renderFinances();
+      updateBadges();
+      toast('Синхронизировано с облаком', 's');
+    }).catch(() => {
+      // silent — local data already rendered
+    });
+  }
+  // render immediately from local
+  initAgents(); renderDashboard(); renderProjects(); renderTasks();
+  renderAgents(); renderScripts(); renderHabits(); renderFinances();
+  renderYT(); buildCmd(); addWelcome(); connectWS(); initDrop();
+  updateBadges(); updateDashDate(); initRouter();
   setInterval(updateDashDate, 60000);
 }
 
@@ -1382,18 +1656,18 @@ function seedIfEmpty() {
   }
   if(!STATE.tasks.length) {
     STATE.tasks = [
-      {id:1,title:'Записать видео о AI-инструментах',project:'YouTube канал',prio:'high',deadline:'2025-04-01',done:false,status:'todo'},
-      {id:2,title:'Написать сценарий Shorts',project:'YouTube канал',prio:'med',deadline:'2025-03-28',done:false,status:'inprogress'},
-      {id:3,title:'Обновить описание канала',project:'YouTube канал',prio:'low',deadline:'2025-04-05',done:true,status:'done'},
-      {id:4,title:'Записать демо-трек',project:'Музыка',prio:'med',deadline:'2025-04-10',done:false,status:'todo'},
+      {id:1,title:'Записать видео о AI-инструментах',project:'YouTube канал',prio:'high',deadline:'2026-04-01',done:false,status:'todo'},
+      {id:2,title:'Написать сценарий Shorts',project:'YouTube канал',prio:'med',deadline:'2026-03-28',done:false,status:'inprogress'},
+      {id:3,title:'Обновить описание канала',project:'YouTube канал',prio:'low',deadline:'2026-04-05',done:true,status:'done'},
+      {id:4,title:'Записать демо-трек',project:'Музыка',prio:'med',deadline:'2026-04-10',done:false,status:'todo'},
     ];
   }
   if(!STATE.finances.length) {
     STATE.finances = [
-      {id:1,type:'income',amount:25000,desc:'YouTube монетизация',cat:'YouTube',date:'2025-03-20'},
-      {id:2,type:'income',amount:15000,desc:'Фриланс проект',cat:'Фриланс',date:'2025-03-18'},
-      {id:3,type:'expense',amount:3200,desc:'Подписки (Adobe, Notion)',cat:'Подписки',date:'2025-03-17'},
-      {id:4,type:'expense',amount:1800,desc:'Продукты',cat:'Продукты',date:'2025-03-16'},
+      {id:1,type:'income',amount:25000,desc:'YouTube монетизация',cat:'YouTube',date:'2026-03-20'},
+      {id:2,type:'income',amount:15000,desc:'Фриланс проект',cat:'Фриланс',date:'2026-03-18'},
+      {id:3,type:'expense',amount:3200,desc:'Подписки (Adobe, Notion)',cat:'Подписки',date:'2026-03-17'},
+      {id:4,type:'expense',amount:1800,desc:'Продукты',cat:'Продукты',date:'2026-03-16'},
     ];
   }
 }
@@ -1403,6 +1677,7 @@ function seedIfEmpty() {
 ══════════════════════════════════════ */
 let currentPage = 'dashboard';
 function goPage(page, el) {
+  if (window.location.hash !== '#/' + page) history.replaceState(null,'','#/'+page);
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const panel = document.getElementById('page-'+page);
@@ -1438,18 +1713,24 @@ function toggleSidebar(force) {
 function connectWS() {
   const dot = document.getElementById('ws-dot');
   const lbl = document.getElementById('ws-lbl');
+  const WS_URL = (typeof OPENCLAW_WS_URL !== 'undefined' && OPENCLAW_WS_URL)
+    ? OPENCLAW_WS_URL
+    : 'ws://127.0.0.1:18789';
   dot.className = 'ws-dot ws-connecting'; lbl.textContent = 'Подключение...';
   try {
-    STATE.ws = new WebSocket('ws://127.0.0.1:18789');
+    STATE.ws = new WebSocket(WS_URL);
     STATE.ws.onopen = ()=>{
-      dot.className='ws-dot ws-on'; lbl.textContent='ws://127.0.0.1:18789';
+      _wsRetry = 0;
+      dot.className='ws-dot ws-on'; lbl.textContent=WS_URL;
       toast('OpenClaw подключён','s');
     };
     STATE.ws.onmessage = (e)=>{ handleWSMsg(e.data); };
     STATE.ws.onclose = ()=>{
       dot.className='ws-dot ws-off'; lbl.textContent='Нет подключения';
       STATE.ws=null;
-      setTimeout(connectWS, 5000);
+      const delay = Math.min(2000 * Math.pow(2, _wsRetry), 30000);
+      _wsRetry++;
+      setTimeout(connectWS, delay);
     };
     STATE.ws.onerror = ()=>{
       dot.className='ws-dot ws-off'; lbl.textContent='Нет подключения';
@@ -1465,7 +1746,7 @@ function toggleWS() {
 function handleWSMsg(data) {
   try {
     const d = JSON.parse(data);
-    if(d.type==='message') addAIMsg(d.content,d.msgType||'plain');
+    if(d.type==='message') { addAIMsg(d.content,d.msgType||'plain'); AICtx.addMsg(STATE.currentProject?.id, 'assistant', d.content); }
     else if(d.type==='task') { addTaskFromAI(d); }
     else if(d.type==='script') { addScriptFromAI(d); }
   } catch(e) {
@@ -1473,12 +1754,10 @@ function handleWSMsg(data) {
   }
 }
 function sendToWS(text) {
-  if(STATE.ws&&STATE.ws.readyState===1) {
-    STATE.ws.send(JSON.stringify({
-      type:'chat', content:text,
-      project: STATE.currentProject?.name||'general',
-      mode: document.getElementById('chat-mode')?.value||'auto',
-    }));
+  if (STATE.ws && STATE.ws.readyState === 1) {
+    const pid = STATE.currentProject?.id;
+    AICtx.addMsg(pid, 'user', text);
+    STATE.ws.send(JSON.stringify(AICtx.payload(pid, text)));
     return true;
   }
   return false;
@@ -1634,15 +1913,16 @@ function switchProject(id) {
   document.getElementById('chat-proj-tag').textContent = p.name;
   toast('Проект: '+p.name,'i');
 }
-function addProject() {
+async function addProject() {
   const name = document.getElementById('proj-title').value.trim(); if(!name) return;
   const type = document.getElementById('proj-type').value;
   const icon = document.getElementById('proj-icon').value;
   const color = PROJ_COLORS[STATE.projects.length % PROJ_COLORS.length];
-  STATE.projects.push({id:Date.now(),name,type,icon,color,tasks:0,scripts:0});
-  save(); renderProjects(); closeModal('modal-new-project');
-  document.getElementById('proj-title').value='';
-  toast('Проект "'+name+'" создан','s');
+  await DB.upsertProject({ name, type, icon, color });
+  renderProjects();
+  closeModal('modal-new-project');
+  document.getElementById('proj-title').value = '';
+  toast('Проект "' + name + '" создан', 's');
 }
 
 /* ══════════════════════════════════════
@@ -1705,18 +1985,21 @@ function renderTasksKanban(el) {
       </div>
     </div>`).join('')}</div>`;
 }
-function addTask() {
+async function addTask() {
   const title = document.getElementById('task-title').value.trim(); if(!title) return;
   const task = {
-    id:Date.now(), title,
-    project: document.getElementById('task-project').value,
-    prio: document.getElementById('task-prio').value,
-    deadline: document.getElementById('task-deadline').value,
-    done:false, status:'todo',
+    title,
+    project: STATE.currentProject?.name || '',
+    prio:     document.getElementById('task-prio').value,
+    deadline: document.getElementById('task-deadline').value || null,
+    done:     false,
+    status:   'todo',
   };
-  STATE.tasks.unshift(task); save(); renderTasks(); renderDashboard();
-  closeModal('modal-new-task'); document.getElementById('task-title').value='';
-  toast('Задача добавлена','s');
+  await DB.upsertTask(task);
+  renderTasks(); renderDashboard(); updateBadges();
+  closeModal('modal-new-task');
+  document.getElementById('task-title').value = '';
+  toast('Задача добавлена', 's');
 }
 function addTaskFromAI(d) {
   STATE.tasks.unshift({id:Date.now(),title:d.title||'AI задача',project:STATE.currentProject?.name||'Личные',prio:'med',deadline:'',done:false,status:'todo'});
@@ -2129,16 +2412,23 @@ function openModalExpense(){
   document.getElementById('fin-type').value='expense';
   openModal('modal-finance');
 }
-function addFinance(){
-  const type=document.getElementById('fin-type').value;
-  const amount=parseFloat(document.getElementById('fin-amount').value)||0; if(!amount) return;
-  const desc=document.getElementById('fin-desc').value||'Без описания';
-  const cat=document.getElementById('fin-cat').value;
-  STATE.finances.unshift({id:Date.now(),type,amount,desc,cat,date:new Date().toLocaleDateString('ru')});
-  save(); renderFinances(); renderDashboard();
+async function addFinance() {
+  const type   = document.getElementById('fin-type').value;
+  const amount = parseFloat(document.getElementById('fin-amount').value) || 0;
+  if(!amount) return;
+  const fin = {
+    type,
+    amount,
+    desc: document.getElementById('fin-desc').value || 'Без описания',
+    cat:  document.getElementById('fin-cat').value,
+    date: new Date().toLocaleDateString('ru'),
+  };
+  await DB.insertFinance(fin);
+  renderFinances(); renderDashboard();
   closeModal('modal-finance');
-  document.getElementById('fin-amount').value=''; document.getElementById('fin-desc').value='';
-  toast((type==='income'?'Доход':'Расход')+' добавлен','s');
+  document.getElementById('fin-amount').value = '';
+  document.getElementById('fin-desc').value = '';
+  toast((type === 'income' ? 'Доход' : 'Расход') + ' добавлен', 's');
 }
 
 /* ══════════════════════════════════════
@@ -2169,9 +2459,15 @@ function renderHabits(){
 }
 function completeHabit(id){
   const h=STATE.habits.find(x=>x.id===id); if(!h) return;
-  h.today=!h.today;
-  if(h.today){h.streak++;h.history.push(1);}
-  else{h.streak=Math.max(0,h.streak-1);h.history.push(0);}
+  h.today = !h.today;
+  const last = h.history[h.history.length - 1];
+  if (h.today) {
+    h.streak++;
+    if (last !== 1) h.history.push(1);
+  } else {
+    h.streak = Math.max(0, h.streak - 1);
+    if (last !== 0) h.history.push(0);
+  }
   save(); renderHabits(); renderDashboard();
   toast(h.today?'Привычка выполнена! 🔥':'Отмечено','s');
 }
@@ -2233,6 +2529,15 @@ document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();openCmd();}
   if(e.key==='Escape')closeCmd();
 });
+
+
+// ── Hash Router ────────────────────────────────────────────────
+function initRouter() {
+  const getPage = () => (window.location.hash.replace('#/', '') || 'dashboard');
+  window.addEventListener('hashchange', () => goPage(getPage()));
+  const startPage = getPage();
+  if (startPage !== 'dashboard') goPage(startPage);
+}
 
 /* ══════════════════════════════════════
    MODALS
